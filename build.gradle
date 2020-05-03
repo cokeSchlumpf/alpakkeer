@@ -1,0 +1,34 @@
+plugins {
+    id 'io.franzbecker.gradle-lombok' version '3.3.0'
+    id 'java'
+}
+
+group 'alpakkeer'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'cc.vileda', name: 'kotlin-openapi3-dsl', version: '0.20.2'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
+    compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.11.0'
+    compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0'
+    compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.11.0'
+    compile group: 'com.google.guava', name: 'guava',  version: '27.0-jre'
+    compile group: 'com.typesafe.akka', name: 'akka-actor-typed_2.13', version: '2.6.4'
+    compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.6.4'
+    compile group: 'io.javalin', name: 'javalin', version: '3.8.0'
+    compile group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.0.9'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
+    compile group: 'org.jtwig', name: 'jtwig-core', version: '5.87.0.RELEASE'
+    compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'
+    compile group: 'org.webjars', name: 'swagger-ui', version: '3.24.3'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
