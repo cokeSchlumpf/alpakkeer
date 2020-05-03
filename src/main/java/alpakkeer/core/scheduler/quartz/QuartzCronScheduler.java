@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class QuartzCronScheduler implements CronScheduler {
+public final class QuartzCronScheduler implements CronScheduler {
 
    static final String CONTEXT_KEY = "JOB_CONTEXT";
 

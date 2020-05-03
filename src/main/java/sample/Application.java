@@ -29,7 +29,7 @@ public class Application {
             Thread.sleep(5000);
             System.out.println("Finishing job!");
          })
-         .withScheduledExecution(CronExpression.everySeconds(3))
+         .withScheduledExecution(CronExpression.everyMinutes(3))
          .build();
 
       var alpakkeer = Alpakkeer
