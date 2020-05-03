@@ -17,22 +17,28 @@ public final class AlpakkeerAPI {
    public static AlpakkeerAPI apply(
       AlpakkeerConfiguration config, CronScheduler scheduler, Resources resources, ObjectMapper om) {
 
-      var about = new AboutResource(config);
-      var jobs = JobsResource.apply(resources);
-      var admin = new AdminResource(scheduler);
+      var jobs = new JobsResource(resources, om);
+      var admin = new AdminResource(config, scheduler);
 
-      JavalinJackson
-         .configure(om);
+      JavalinJackson.configure(om);
 
       Javalin app = Javalin
          .create(cfg -> {
             cfg.showJavalinBanner = false;
             cfg.registerPlugin(AlpakkeerOpenApi.apply(config));
          })
-         .get("/api/v1/about", about::getAbout)
-         .get("/api/v1/jobs", jobs::getJobs)
-         .get("/api/v1/jobs/:name", jobs::getJob)
-         .get("/api/v1/admin/crontab", admin::getJobs)
+
+         // Jobs
+         .get("/api/v1/jobs", jobs.getJobs())
+         .get("/api/v1/jobs/:name", jobs.getJob())
+         .options("/api/v1/jobs/:name", jobs.getTriggerJobExample())
+         .post("/api/v1/jobs/:name", jobs.triggerJob())
+
+         // Admin
+         .get("/api/v1/about", admin.getAbout())
+         .get("/api/v1/admin/crontab", admin.getJobs())
+
+         // run ...
          .start(config.getApi().getHostname(), config.getApi().getPort());
 
       return AlpakkeerAPI.apply(app);

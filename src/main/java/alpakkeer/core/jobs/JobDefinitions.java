@@ -79,11 +79,11 @@ public final class JobDefinitions {
          return withRunnableFromId(run, ForkJoinPool.commonPool());
       }
 
-      default WithRunnableBuilder<P> withRunnableFromProperties(Consumer<P> run, Executor executor) {
-         return withRunnable((id, p) -> run.accept(p), executor);
+      default WithRunnableBuilder<P> withRunnableFromProperties(Operators.ExceptionalConsumer<P> run, Executor executor) {
+         return withRunnable((id, p) -> Operators.suppressExceptions(() -> run.accept(p)), executor);
       }
 
-      default WithRunnableBuilder<P> withRunnableFromProperties(Consumer<P> run) {
+      default WithRunnableBuilder<P> withRunnableFromProperties(Operators.ExceptionalConsumer<P> run) {
          return withRunnableFromProperties(run, ForkJoinPool.commonPool());
       }
       

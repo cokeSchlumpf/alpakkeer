@@ -79,6 +79,12 @@ public final class Operators {
       }
    }
 
+   public static boolean isCause(Class<? extends Throwable> expected, Throwable exc) {
+      return expected.isInstance(exc) || (
+         exc != null && isCause(expected, exc.getCause())
+      );
+   }
+
    public static String hash() {
       return Hashing
          .goodFastHash(8)
@@ -148,6 +154,13 @@ public final class Operators {
    public interface ExceptionalRunnable {
 
       void run() throws Exception;
+
+   }
+
+   @FunctionalInterface
+   public interface ExceptionalConsumer<T> {
+
+      void accept(T param) throws Exception;
 
    }
 
