@@ -43,6 +43,7 @@ public final class Starting<P> extends State<P> {
    @Override
    public State<P> onFailed(Failed<P> failed) {
       LOG.warn("An exception occurred while starting job", failed.getException());
+      context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
       return processQueue();
    }
 
@@ -54,6 +55,8 @@ public final class Starting<P> extends State<P> {
 
    @Override
    public State<P> onStarted(Started<P> started) {
+      context.getJobDefinition().getMonitors().onStarted(currentExecution.getId());
+
       started.getHandle().getCompletion().whenComplete((done, exception) -> {
          if (exception != null) {
             actor.getSelf().tell(Failed.apply(exception));

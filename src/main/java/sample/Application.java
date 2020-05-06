@@ -1,7 +1,6 @@
 package sample;
 
 import alpakkeer.Alpakkeer;
-import alpakkeer.core.jobs.JobDefinitions;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.util.Operators;
 import lombok.AccessLevel;
@@ -20,24 +19,24 @@ public class Application {
       String text;
    }
 
-   public static void main(String ...args) {
-      var job = JobDefinitions
-         .create("sample-job")
-         .withProperties(MyProperties.apply("hello"))
-         .withRunnableFromProperties(p -> {
-            System.out.println("Starting job - text: " + p.getText());
-            Thread.sleep(5000);
-            System.out.println("Finishing job!");
-         })
-         .withScheduledExecution(CronExpression.everyMinutes(3))
-         .build();
-
+   public static void main(String... args) {
       var alpakkeer = Alpakkeer
          .create()
-         .withJob(job)
+         .withJob(builder -> builder
+            .create("sample-job")
+            .withProperties(MyProperties.apply("hello"))
+            .withRunnableFromProperties(p -> {
+               System.out.println("Starting job - text: " + p.getText());
+               Thread.sleep(5000);
+               System.out.println("Finishing job!");
+            })
+            .withHistoryMonitor(3)
+            .withLoggingMonitor()
+            .withScheduledExecution(CronExpression.everyMinutes(1))
+            .build())
          .start();
 
-      Operators.suppressExceptions(() -> Thread.sleep(Duration.ofMinutes(10).toMillis()));
+      Operators.suppressExceptions(() -> Thread.sleep(Duration.ofMinutes(300).toMillis()));
 
       alpakkeer.stop();
    }

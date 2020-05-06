@@ -116,12 +116,34 @@ public final class Operators {
             .orElse(String.format("%s: No details provided.", ex.getClass().getSimpleName())));
    }
 
-   public static void ignoreExceptions(ExceptionalRunnable runnable) {
+   public static void ignoreExceptions(ExceptionalRunnable runnable, Logger log) {
       try {
          runnable.run();
       } catch (Exception e) {
-         ExceptionUtils.wrapAndThrow(e);
+         if (log != null) {
+            log.warn("An exception occurred but will be ignored", e);
+         }
       }
+   }
+
+   public static void ignoreExceptions(ExceptionalRunnable runnable) {
+      ignoreExceptions(runnable, null);
+   }
+
+   public static <T> T ignoreExceptionsWithDefault(ExceptionalSupplier<T> supplier, T defaultValue, Logger log) {
+      try {
+         return supplier.get();
+      } catch (Exception e) {
+         if (log != null) {
+            log.warn("An exception occurred but will be ignored", e);
+         }
+
+         return defaultValue;
+      }
+   }
+
+   public static <T> T ignoreExceptionsWithDefault(ExceptionalSupplier<T> supplier, T defaultValue) {
+      return ignoreExceptionsWithDefault(supplier, defaultValue, null);
    }
 
    public static void require(boolean condition, String message, Object... args) {

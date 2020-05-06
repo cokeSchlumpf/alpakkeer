@@ -25,13 +25,13 @@ public final class Running<P> extends State<P> {
 
    @Override
    public State<P> onCompleted(Completed<P> completed) {
-      LOG.info("Successfully finished job execution `{}`", currentExecution.getId());
+      context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId());
       return processQueue();
    }
 
    @Override
    public State<P> onFailed(Failed<P> failed) {
-      LOG.warn(String.format("Job execution `%s` finished with exception.", currentExecution.getId()), failed.getException());
+      context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
       return processQueue();
    }
 
@@ -53,7 +53,7 @@ public final class Running<P> extends State<P> {
 
       handle.stop();
       if (stop.isClearQueue()) context.getQueue().clear();
-      return Stopping.apply(actor, context, currentExecution, handle, stop);
+      return Stopping.apply(actor, context, currentExecution, stop);
    }
 
 }

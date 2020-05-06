@@ -35,6 +35,7 @@ public final class JobActor<P> extends AbstractBehavior<Message<P>> {
          .onMessage(Start.class, start -> this.onStart((Start<P>) start))
          .onMessage(Started.class, started -> this.onStarted((Started<P>) started))
          .onMessage(Status.class, status -> this.onStatus((Status<P>) status))
+         .onMessage(StatusDetails.class, status -> this.onStatusDetails((StatusDetails<P>) status))
          .onMessage(Stop.class, stop -> this.onStop((Stop<P>) stop))
          .onMessage(Failed.class, failed -> this.onFailed((Failed<P>) failed))
          .build();
@@ -72,6 +73,11 @@ public final class JobActor<P> extends AbstractBehavior<Message<P>> {
 
    private Behavior<Message<P>> onStatus(Status<P> status) {
       state.onStatus(status);
+      return Behaviors.same();
+   }
+
+   private Behavior<Message<P>> onStatusDetails(StatusDetails<P> status) {
+      state.onStatusDetails(status);
       return Behaviors.same();
    }
 

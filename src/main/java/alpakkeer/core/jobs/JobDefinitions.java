@@ -1,6 +1,8 @@
 package alpakkeer.core.jobs;
 
+import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
+import alpakkeer.core.jobs.monitor.*;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.values.Name;
@@ -10,7 +12,8 @@ import com.google.common.collect.Lists;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,16 +25,21 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@AllArgsConstructor(staticName = "apply")
 public final class JobDefinitions {
 
+   private RuntimeConfiguration runtimeConfiguration;
+
    public interface WithRunnableBuilderFactory<P> {
-      
+
+      RuntimeConfiguration getRuntimeConfiguration();
+
       Name getName();
       
       P getDefaultProperties();
 
       default WithRunnableBuilder<P> withCancelableRunnable(BiFunction<String, P, CompletionStage<JobHandle>> handleFactory) {
-         return WithRunnableBuilder.apply(getName(), getDefaultProperties(), handleFactory, Lists.newArrayList());
+         return WithRunnableBuilder.apply(getRuntimeConfiguration(), getName(), getDefaultProperties(), handleFactory);
       }
 
       default WithRunnableBuilder<P> withCancelableRunnableFromId(String name, Function<String, CompletionStage<JobHandle>> handleFactory) {
@@ -44,7 +52,8 @@ public final class JobDefinitions {
 
       default WithRunnableBuilder<P> withRunnableCS(BiFunction<String, P, CompletionStage<?>> run) {
          return WithRunnableBuilder.apply(
-            getName(), getDefaultProperties(), (id, p) -> CompletableFuture.completedFuture(JobHandles.create(run.apply(id, p))), Lists.newArrayList());
+            getRuntimeConfiguration(), getName(), getDefaultProperties(),
+            (id, p) -> CompletableFuture.completedFuture(JobHandles.create(run.apply(id, p))));
       }
 
       default WithRunnableBuilder<P> withRunnableCSFromId(Function<String, CompletionStage<?>> run) {
@@ -93,10 +102,12 @@ public final class JobDefinitions {
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class InitialBuilder implements WithRunnableBuilderFactory<Nothing> {
 
-      Name name;
+      private RuntimeConfiguration runtimeConfiguration;
+
+      private Name name;
 
       public <P> WithPropertiesBuilder<P> withProperties(P defaultProperties) {
-         return WithPropertiesBuilder.apply(name, defaultProperties);
+         return WithPropertiesBuilder.apply(runtimeConfiguration, name, defaultProperties);
       }
 
       @Override
@@ -110,28 +121,67 @@ public final class JobDefinitions {
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class WithPropertiesBuilder<P> implements WithRunnableBuilderFactory<P> {
 
-      Name name;
+      private RuntimeConfiguration runtimeConfiguration;
 
-      P defaultProperties;
+      private Name name;
+
+      private P defaultProperties;
 
    }
 
-   @Value
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class WithRunnableBuilder<P> {
 
-      Name name;
+      private RuntimeConfiguration runtimeConfiguration;
 
-      P defaultProperties;
+      private Name name;
 
-      BiFunction<String, P, CompletionStage<JobHandle>> run;
+      private P defaultProperties;
 
-      List<ScheduleExecution<P>> scheduleExecutions;
+      private BiFunction<String, P, CompletionStage<JobHandle>> run;
 
-      public JobDefinition<P> build() {
-         return SimpleJobDefinition.apply(run, name, defaultProperties, scheduleExecutions);
+      private List<ScheduleExecution<P>> scheduleExecutions;
+
+      private CombinedJobMonitor<P> monitors;
+
+      private Logger logger;
+
+      public static <P> WithRunnableBuilder<P> apply(RuntimeConfiguration runtimeConfiguration, Name name, P defaultProperties, BiFunction<String, P, CompletionStage<JobHandle>> run) {
+         var logger = LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name.getValue())); // TODO: Name to snake case
+         return apply(runtimeConfiguration, name, defaultProperties, run, Lists.newArrayList(), CombinedJobMonitor.apply(), logger);
       }
 
+      public JobDefinition<P> build() {
+         return SimpleJobDefinition.apply(run, name, defaultProperties, logger, scheduleExecutions, monitors);
+      }
+
+      /*
+       * Monitors
+       */
+      public WithRunnableBuilder<P> withHistoryMonitor() {
+         return withHistoryMonitor(10);
+      }
+
+      public WithRunnableBuilder<P> withHistoryMonitor(int limit) {
+         return withMonitor(InMemoryHistoryJobMonitor.apply(limit, runtimeConfiguration.getObjectMapper()));
+      }
+
+      public WithRunnableBuilder<P> withLoggingMonitor() {
+         return withMonitor(LoggingJobMonitor.apply(name.getValue(), logger, runtimeConfiguration.getObjectMapper()));
+      }
+
+      public WithRunnableBuilder<P> withPrometheusMetricsMonitor() {
+         return withMonitor(PrometheusJobMonitor.apply(name.getValue(), runtimeConfiguration.getCollectorRegistry()));
+      }
+
+      public WithRunnableBuilder<P> withMonitor(JobMonitor<P> monitor) {
+         monitors = monitors.withMonitor(monitor);
+         return this;
+      }
+
+      /*
+       * Schedule
+       */
       public WithRunnableBuilder<P> withScheduledExecution(ScheduleExecution<P> execution) {
          this.scheduleExecutions.add(execution);
          return this;
@@ -160,7 +210,11 @@ public final class JobDefinitions {
 
       private final P defaultProperties;
 
+      private final Logger logger;
+
       private final List<ScheduleExecution<P>> schedule;
+
+      private final CombinedJobMonitor<P> monitors;
 
       @Override
       public P getDefaultProperties() {
@@ -173,8 +227,18 @@ public final class JobDefinitions {
       }
 
       @Override
+      public Logger getLogger() {
+         return logger;
+      }
+
+      @Override
       public List<ScheduleExecution<P>> getSchedule() {
          return ImmutableList.copyOf(schedule);
+      }
+
+      @Override
+      public CombinedJobMonitor<P> getMonitors() {
+         return monitors;
       }
 
       @Override
@@ -184,15 +248,11 @@ public final class JobDefinitions {
 
    }
 
-   private JobDefinitions() {
-
+   public InitialBuilder create(Name name) {
+      return InitialBuilder.apply(runtimeConfiguration, name);
    }
 
-   public static InitialBuilder create(Name name) {
-      return InitialBuilder.apply(name);
-   }
-
-   public static InitialBuilder create(String name) {
+   public InitialBuilder create(String name) {
       return create(Name.apply(name));
    }
 

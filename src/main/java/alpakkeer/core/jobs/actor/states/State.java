@@ -2,22 +2,19 @@ package alpakkeer.core.jobs.actor.states;
 
 import akka.Done;
 import akka.actor.typed.javadsl.ActorContext;
-import alpakkeer.core.jobs.actor.JobActor;
 import alpakkeer.core.jobs.actor.context.Context;
 import alpakkeer.core.jobs.actor.context.CurrentExecution;
 import alpakkeer.core.jobs.actor.context.ScheduledExecutionReference;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.exceptions.AlreadyRunningException;
-import alpakkeer.core.jobs.model.JobState;
-import alpakkeer.core.jobs.model.JobStatus;
-import alpakkeer.core.jobs.model.QueuedExecution;
-import alpakkeer.core.jobs.model.ScheduledExecution;
+import alpakkeer.core.jobs.model.*;
+import alpakkeer.core.util.Operators;
 import alpakkeer.core.values.Name;
 import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public abstract class State<P> {
@@ -34,10 +31,7 @@ public abstract class State<P> {
       this.state = state;
       this.actor = actor;
       this.context = context;
-      this.LOG = LoggerFactory.getLogger(String.format(
-         "%s.%s",
-         JobActor.class.getName(),
-         context.getJobDefinition().getName().getValue()));
+      this.LOG = context.getJobDefinition().getLogger();
    }
 
    public abstract State<P> onCompleted(Completed<P> completed);
@@ -99,11 +93,35 @@ public abstract class State<P> {
       });
    }
 
+   public void onStatusDetails(StatusDetails<P> status) {
+      Operators
+         .compose(
+            context.getSchedule(),
+            context.getJobDefinition().getMonitors().getStatus(),
+            (schedule, details) -> {
+               var jobStatus = JobStatus.apply(
+                  context.getJobDefinition().getName().getValue(),
+                  state, List.copyOf(context.getQueue()), schedule);
+
+               return JobStatusDetails.apply(jobStatus, details.orElse(null));
+            })
+      .whenComplete((details, ex) -> {
+         if (ex != null) {
+            LOG.warn(
+               String.format("An exception occurred while fetching status details of job `%s`", context.getJobDefinition().getName().getValue()),
+               ex);
+         } else {
+            status.getReplyTo().tell(details);
+         }
+      });
+   }
+
    protected void queue(Start<P> start) {
       if (!start.isQueue()) {
          start.getErrorTo().tell(AlreadyRunningException.apply(context.getJobDefinition().getName()));
       } else {
          context.getQueue().add(QueuedExecution.apply(start.getProperties()));
+         context.getJobDefinition().getMonitors().onQueued(context.getQueue().size());
          start.getReplyTo().tell(Done.getInstance());
       }
    }
@@ -113,8 +131,6 @@ public abstract class State<P> {
          return Idle.apply(actor, context);
       } else {
          var execution = context.getQueue().remove(0);
-
-         LOG.info("Starting job execution `{}`", execution.getId());
          var eventualHandle = context.getJobDefinition().run(execution.getId(), execution.getProperties());
 
          eventualHandle.whenComplete((handle, ex) -> {
@@ -124,6 +140,9 @@ public abstract class State<P> {
                actor.getSelf().tell(Started.apply(handle));
             }
          });
+
+         context.getJobDefinition().getMonitors().onEnqueued(context.getQueue().size());
+         context.getJobDefinition().getMonitors().onTriggered(execution.getId(), execution.getProperties());
 
          var current = CurrentExecution.apply(execution.getId(), execution.getProperties(), LocalDateTime.now());
          return Starting.apply(actor, context, current);

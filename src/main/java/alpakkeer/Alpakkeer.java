@@ -5,8 +5,8 @@ import alpakkeer.api.AlpakkeerAPI;
 import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.core.resources.Resources;
 import alpakkeer.core.scheduler.CronScheduler;
-import alpakkeer.core.util.ObjectMapperFactory;
 import alpakkeer.core.util.Templates;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,8 +24,7 @@ public final class Alpakkeer {
 
    private final AlpakkeerAPI api;
 
-   static Alpakkeer apply(ActorSystem system, CronScheduler scheduler, Resources resources) {
-      var om = ObjectMapperFactory.apply().create(true);
+   static Alpakkeer apply(ActorSystem system, CronScheduler scheduler, Resources resources, ObjectMapper om) {
       var config = AlpakkeerConfiguration.apply();
       var api = AlpakkeerAPI.apply(config, scheduler, resources, om);
 

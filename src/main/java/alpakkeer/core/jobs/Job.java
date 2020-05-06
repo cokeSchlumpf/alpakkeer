@@ -2,6 +2,7 @@ package alpakkeer.core.jobs;
 
 import akka.Done;
 import alpakkeer.core.jobs.model.JobStatus;
+import alpakkeer.core.jobs.model.JobStatusDetails;
 import alpakkeer.core.jobs.model.ScheduledExecution;
 import alpakkeer.core.scheduler.model.CronExpression;
 
@@ -18,6 +19,8 @@ public interface Job<P> {
    CompletionStage<ScheduledExecution<P>> schedule(P properties, Boolean queue, CronExpression cron);
 
    CompletionStage<JobStatus<P>> getStatus();
+
+   CompletionStage<JobStatusDetails<P>> getStatusDetails();
 
    default CompletionStage<JobStatus<?>> getStatusUnchecked() {
       return getStatus().thenApply(s -> s);

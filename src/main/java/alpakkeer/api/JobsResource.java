@@ -3,18 +3,15 @@ package alpakkeer.api;
 import alpakkeer.core.jobs.Job;
 import alpakkeer.core.jobs.exceptions.AlreadyRunningException;
 import alpakkeer.core.jobs.model.JobStatus;
+import alpakkeer.core.jobs.model.JobStatusDetails;
 import alpakkeer.core.resources.Resources;
 import alpakkeer.core.util.Json;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.values.Name;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Handler;
-import io.javalin.http.JavalinResponseWrapper;
 import io.javalin.http.NotFoundResponse;
-import io.javalin.plugin.openapi.dsl.DocumentedContent;
-import io.javalin.plugin.openapi.dsl.DocumentedResponse;
 import io.javalin.plugin.openapi.dsl.OpenApiBuilder;
-import io.javalin.plugin.rendering.template.JavalinJtwig;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Value;
@@ -67,14 +64,14 @@ public final class JobsResource {
             op.addTagsItem("Jobs");
          })
          .pathParam("name", String.class, p -> p.description("The name of the job"))
-         .json("200", JobStatus.class);
+         .json("200", JobStatusDetails.class);
 
 
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = Name.apply(ctx.pathParam(PARAM_NAME));
 
          resources.getJob(name).ifPresentOrElse(
-            job -> ctx.json(job.getStatus().toCompletableFuture()),
+            job -> ctx.json(job.getStatusDetails().toCompletableFuture()),
             () -> notFound(name));
       });
    }

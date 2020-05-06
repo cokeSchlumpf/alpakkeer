@@ -7,6 +7,7 @@ import akka.actor.typed.javadsl.Adapter;
 import alpakkeer.core.jobs.actor.JobActor;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobStatus;
+import alpakkeer.core.jobs.model.JobStatusDetails;
 import alpakkeer.core.jobs.model.ScheduledExecution;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.scheduler.model.CronExpression;
@@ -57,6 +58,11 @@ public final class Jobs {
       @Override
       public CompletionStage<JobStatus<P>> getStatus() {
          return patterns.ask(actor, Status::apply);
+      }
+
+      @Override
+      public CompletionStage<JobStatusDetails<P>> getStatusDetails() {
+         return patterns.ask(actor, StatusDetails::apply);
       }
 
    }
