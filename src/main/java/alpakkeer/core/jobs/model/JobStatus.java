@@ -7,11 +7,13 @@ import java.util.List;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class JobStatus<P> {
+public class JobStatus<P, C> {
 
    String name;
 
    JobState state;
+
+   C context;
 
    List<QueuedExecution<P>> queued;
 

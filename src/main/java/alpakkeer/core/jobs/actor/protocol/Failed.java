@@ -5,7 +5,7 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class Failed<P> implements Message<P> {
+public class Failed<P, C> implements Message<P, C> {
 
    Throwable exception;
 

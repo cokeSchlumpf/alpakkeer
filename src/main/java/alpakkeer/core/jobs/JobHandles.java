@@ -1,11 +1,11 @@
 package alpakkeer.core.jobs;
 
-import akka.Done;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 public final class JobHandles {
 
@@ -16,33 +16,25 @@ public final class JobHandles {
    }
 
    @AllArgsConstructor(staticName = "apply")
-   private static class SimpleJobHandle implements JobHandle {
+   private static class SimpleJobHandle<C> implements JobHandle<C> {
 
-      CompletionStage<?> done;
+      CompletionStage<C> done;
 
       @Override
-      public CompletionStage<Done> getCompletion() {
-         return done.thenApply(i -> Done.getInstance());
+      public CompletionStage<C> getCompletion() {
+         return done;
       }
 
       @Override
-      public CompletionStage<Done> stop() {
+      public CompletionStage<Optional<C>> stop() {
          LOG.warn("Attempt to stop simple job - Simple jobs cannot be requested to stop; will continue processing.");
-         return done.thenApply(i -> Done.getInstance());
+         return done.thenApply(Optional::of);
       }
 
    }
 
-   public static JobHandle create(CompletionStage<?> run) {
+   public static <C> JobHandle<C> create(CompletionStage<C> run) {
       return SimpleJobHandle.apply(run);
-   }
-
-   public static JobHandle runAsync(Runnable run, Executor executor) {
-      return SimpleJobHandle.apply(CompletableFuture.runAsync(run, executor).thenApply(ignore -> Done.getInstance()));
-   }
-
-   public static JobHandle runAsync(Runnable run) {
-      return runAsync(run, ForkJoinPool.commonPool());
    }
 
 }

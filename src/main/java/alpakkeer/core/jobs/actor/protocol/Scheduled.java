@@ -9,7 +9,7 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class Scheduled<P> implements Message<P> {
+public class Scheduled<P, C> implements Message<P, C> {
 
    Name name;
 

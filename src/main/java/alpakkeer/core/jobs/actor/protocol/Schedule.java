@@ -8,7 +8,7 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class Schedule<P> implements Message<P> {
+public class Schedule<P, C> implements Message<P, C> {
 
    CronExpression cron;
 

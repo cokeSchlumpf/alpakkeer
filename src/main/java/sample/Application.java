@@ -23,9 +23,8 @@ public class Application {
       var alpakkeer = Alpakkeer
          .create()
          .withJob(builder -> builder
-            .create("sample-job")
-            .withProperties(MyProperties.apply("hello"))
-            .withRunnableFromProperties(p -> {
+            .create("sample-job", MyProperties.apply("hello"))
+            .run((s, p) -> {
                System.out.println("Starting job - text: " + p.getText());
                Thread.sleep(5000);
                System.out.println("Finishing job!");

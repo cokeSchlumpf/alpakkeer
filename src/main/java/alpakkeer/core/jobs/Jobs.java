@@ -27,16 +27,16 @@ public final class Jobs {
    }
 
    @AllArgsConstructor(staticName = "apply")
-   private static class ActorJob<P> implements Job<P> {
+   private static class ActorJob<P, C> implements Job<P, C> {
 
-      private final JobDefinition<P> definition;
+      private final JobDefinition<P, C> definition;
 
-      private final ActorRef<Message<P>> actor;
+      private final ActorRef<Message<P, C>> actor;
 
       private final ActorPatterns patterns;
 
       @Override
-      public JobDefinition<P> getDefinition() {
+      public JobDefinition<P, C> getDefinition() {
          return definition;
       }
 
@@ -56,18 +56,18 @@ public final class Jobs {
       }
 
       @Override
-      public CompletionStage<JobStatus<P>> getStatus() {
+      public CompletionStage<JobStatus<P, C>> getStatus() {
          return patterns.ask(actor, Status::apply);
       }
 
       @Override
-      public CompletionStage<JobStatusDetails<P>> getStatusDetails() {
+      public CompletionStage<JobStatusDetails<P, C>> getStatusDetails() {
          return patterns.ask(actor, StatusDetails::apply);
       }
 
    }
 
-   public static <P> Job<P> apply(ActorSystem system, CronScheduler scheduler, JobDefinition<P> definition) {
+   public static <P, C> Job<P, C> apply(ActorSystem system, CronScheduler scheduler, JobDefinition<P, C> definition) {
       var behavior = JobActor.apply(definition, scheduler);
       var actor = Adapter.spawn(system, behavior, definition.getName().getValue());
       var actorJob = ActorJob.apply(definition, actor, ActorPatterns.apply(system));

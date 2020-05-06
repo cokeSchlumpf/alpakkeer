@@ -12,76 +12,76 @@ import alpakkeer.core.jobs.actor.states.Idle;
 import alpakkeer.core.jobs.actor.states.State;
 import alpakkeer.core.scheduler.CronScheduler;
 
-public final class JobActor<P> extends AbstractBehavior<Message<P>> {
+public final class JobActor<P, C> extends AbstractBehavior<Message<P, C>> {
 
-   private State<P> state;
+   private State<P, C> state;
 
-   private JobActor(ActorContext<Message<P>> context, JobDefinition<P> definition, CronScheduler scheduler) {
+   private JobActor(ActorContext<Message<P, C>> context, JobDefinition<P, C> definition, CronScheduler scheduler) {
       super(context);
       this.state = Idle.apply(context, Context.apply(definition, scheduler));
    }
 
-   public static <P> Behavior<Message<P>> apply(JobDefinition<P> definition, CronScheduler scheduler) {
+   public static <P, C> Behavior<Message<P, C>> apply(JobDefinition<P, C> definition, CronScheduler scheduler) {
       return Behaviors.setup(ctx -> new JobActor<>(ctx, definition, scheduler));
    }
 
    @Override
    @SuppressWarnings("unchecked")
-   public Receive<Message<P>> createReceive() {
+   public Receive<Message<P, C>> createReceive() {
       return newReceiveBuilder()
-         .onMessage(Completed.class, completed -> this.onCompleted((Completed<P>) completed))
-         .onMessage(Schedule.class, schedule -> this.onSchedule((Schedule<P>) schedule))
-         .onMessage(Scheduled.class, scheduled -> this.onScheduled((Scheduled<P>) scheduled))
-         .onMessage(Start.class, start -> this.onStart((Start<P>) start))
-         .onMessage(Started.class, started -> this.onStarted((Started<P>) started))
-         .onMessage(Status.class, status -> this.onStatus((Status<P>) status))
-         .onMessage(StatusDetails.class, status -> this.onStatusDetails((StatusDetails<P>) status))
-         .onMessage(Stop.class, stop -> this.onStop((Stop<P>) stop))
-         .onMessage(Failed.class, failed -> this.onFailed((Failed<P>) failed))
+         .onMessage(Completed.class, completed -> this.onCompleted((Completed<P, C>) completed))
+         .onMessage(Schedule.class, schedule -> this.onSchedule((Schedule<P, C>) schedule))
+         .onMessage(Scheduled.class, scheduled -> this.onScheduled((Scheduled<P, C>) scheduled))
+         .onMessage(Start.class, start -> this.onStart((Start<P, C>) start))
+         .onMessage(Started.class, started -> this.onStarted((Started<P, C>) started))
+         .onMessage(Status.class, status -> this.onStatus((Status<P, C>) status))
+         .onMessage(StatusDetails.class, status -> this.onStatusDetails((StatusDetails<P, C>) status))
+         .onMessage(Stop.class, stop -> this.onStop((Stop<P, C>) stop))
+         .onMessage(Failed.class, failed -> this.onFailed((Failed<P, C>) failed))
          .build();
    }
 
-   private Behavior<Message<P>> onCompleted(Completed<P> completed) {
+   private Behavior<Message<P, C>> onCompleted(Completed<P, C> completed) {
       state = state.onCompleted(completed);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onFailed(Failed<P> failed) {
+   private Behavior<Message<P, C>> onFailed(Failed<P, C> failed) {
       state = state.onFailed(failed);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onSchedule(Schedule<P> schedule) {
+   private Behavior<Message<P, C>> onSchedule(Schedule<P, C> schedule) {
       state.onSchedule(schedule);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onScheduled(Scheduled<P> scheduled) {
+   private Behavior<Message<P, C>> onScheduled(Scheduled<P, C> scheduled) {
       state.onScheduled(scheduled);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onStart(Start<P> start) {
+   private Behavior<Message<P, C>> onStart(Start<P, C> start) {
       state = state.onStart(start);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onStarted(Started<P> started) {
+   private Behavior<Message<P, C>> onStarted(Started<P, C> started) {
       state = state.onStarted(started);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onStatus(Status<P> status) {
+   private Behavior<Message<P, C>> onStatus(Status<P, C> status) {
       state.onStatus(status);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onStatusDetails(StatusDetails<P> status) {
+   private Behavior<Message<P, C>> onStatusDetails(StatusDetails<P, C> status) {
       state.onStatusDetails(status);
       return Behaviors.same();
    }
 
-   private Behavior<Message<P>> onStop(Stop<P> stop) {
+   private Behavior<Message<P, C>> onStop(Stop<P, C> stop) {
       state = state.onStop(stop);
       return Behaviors.same();
    }

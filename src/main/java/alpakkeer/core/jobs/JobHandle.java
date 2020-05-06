@@ -1,13 +1,12 @@
 package alpakkeer.core.jobs;
 
-import akka.Done;
-
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-public interface JobHandle {
+public interface JobHandle<C> {
 
-   CompletionStage<Done> getCompletion();
+   CompletionStage<C> getCompletion();
 
-   CompletionStage<Done> stop();
+   CompletionStage<Optional<C>> stop();
 
 }

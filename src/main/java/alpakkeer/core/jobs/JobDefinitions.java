@@ -1,5 +1,8 @@
 package alpakkeer.core.jobs;
 
+import akka.japi.function.Function2;
+import akka.japi.function.Function3;
+import akka.japi.function.Procedure2;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.*;
@@ -11,18 +14,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 @AllArgsConstructor(staticName = "apply")
@@ -30,115 +28,77 @@ public final class JobDefinitions {
 
    private RuntimeConfiguration runtimeConfiguration;
 
-   public interface WithRunnableBuilderFactory<P> {
-
-      RuntimeConfiguration getRuntimeConfiguration();
-
-      Name getName();
-      
-      P getDefaultProperties();
-
-      default WithRunnableBuilder<P> withCancelableRunnable(BiFunction<String, P, CompletionStage<JobHandle>> handleFactory) {
-         return WithRunnableBuilder.apply(getRuntimeConfiguration(), getName(), getDefaultProperties(), handleFactory);
-      }
-
-      default WithRunnableBuilder<P> withCancelableRunnableFromId(String name, Function<String, CompletionStage<JobHandle>> handleFactory) {
-         return withCancelableRunnable((id, p) -> handleFactory.apply(id));
-      }
-
-      default WithRunnableBuilder<P> withCancelableRunnableFromProperties(String name, Function<P, CompletionStage<JobHandle>> handleFactory) {
-         return withCancelableRunnable((id, p) -> handleFactory.apply(p));
-      }
-
-      default WithRunnableBuilder<P> withRunnableCS(BiFunction<String, P, CompletionStage<?>> run) {
-         return WithRunnableBuilder.apply(
-            getRuntimeConfiguration(), getName(), getDefaultProperties(),
-            (id, p) -> CompletableFuture.completedFuture(JobHandles.create(run.apply(id, p))));
-      }
-
-      default WithRunnableBuilder<P> withRunnableCSFromId(Function<String, CompletionStage<?>> run) {
-         return withRunnableCS((id, p) -> run.apply(id));
-      }
-
-      default WithRunnableBuilder<P> withRunnableCSFromProperties(Function<P, CompletionStage<?>> run) {
-         return withRunnableCS((id, p) -> run.apply(p));
-      }
-
-      default WithRunnableBuilder<P> withRunnable(BiConsumer<String, P> run, Executor executor) {
-         return withRunnableCS((id, p) -> CompletableFuture.runAsync(() -> run.accept(id, p), executor));
-      }
-
-      default WithRunnableBuilder<P> withRunnable(BiConsumer<String, P> run) {
-         return withRunnable(run, ForkJoinPool.commonPool());
-      }
-
-      default WithRunnableBuilder<P> withRunnable(Operators.ExceptionalRunnable run, Executor executor) {
-         return withRunnable((s, p) -> Operators.suppressExceptions(run), executor);
-      }
-
-      default WithRunnableBuilder<P> withRunnable(Operators.ExceptionalRunnable run) {
-         return withRunnable(run, ForkJoinPool.commonPool());
-      }
-
-      default WithRunnableBuilder<P> withRunnableFromId(Consumer<String> run, Executor executor) {
-         return withRunnable((id, p) -> run.accept(id), executor);
-      }
-
-      default WithRunnableBuilder<P> withRunnableFromId(Consumer<String> run) {
-         return withRunnableFromId(run, ForkJoinPool.commonPool());
-      }
-
-      default WithRunnableBuilder<P> withRunnableFromProperties(Operators.ExceptionalConsumer<P> run, Executor executor) {
-         return withRunnable((id, p) -> Operators.suppressExceptions(() -> run.accept(p)), executor);
-      }
-
-      default WithRunnableBuilder<P> withRunnableFromProperties(Operators.ExceptionalConsumer<P> run) {
-         return withRunnableFromProperties(run, ForkJoinPool.commonPool());
-      }
-      
-   }
-
-   @Getter
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
-   public static class InitialBuilder implements WithRunnableBuilderFactory<Nothing> {
+   public static class JobTypeConfiguration<P, C> {
 
-      private RuntimeConfiguration runtimeConfiguration;
+      private final P defaultProperties;
 
-      private Name name;
+      private final C initialContext;
 
-      public <P> WithPropertiesBuilder<P> withProperties(P defaultProperties) {
-         return WithPropertiesBuilder.apply(runtimeConfiguration, name, defaultProperties);
+      public static JobTypeConfiguration<Nothing, Nothing> apply() {
+         return apply(Nothing.getInstance(), Nothing.getInstance());
       }
 
-      @Override
-      public Nothing getDefaultProperties() {
-         return Nothing.getInstance();
+      public <T> JobTypeConfiguration<T, C> withDefaultProperties(T defaultProperties) {
+         return apply(defaultProperties, initialContext);
+      }
+
+      public <T> JobTypeConfiguration<P, T> withInitialContext(T initialContext) {
+         return apply(defaultProperties, initialContext);
       }
 
    }
 
-   @Getter
+   @Value
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
-   public static class WithPropertiesBuilder<P> implements WithRunnableBuilderFactory<P> {
+   public static class JobRunnableConfiguration<P, C> {
 
-      private RuntimeConfiguration runtimeConfiguration;
+      Name name;
 
-      private Name name;
+      RuntimeConfiguration runtimeConfiguration;
 
-      private P defaultProperties;
+      JobTypeConfiguration<P, C> jobTypes;
+
+      public JobSettingsConfiguration<P, C> runCancelableCS(Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
+         return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run);
+      }
+
+      public JobSettingsConfiguration<P, C> fromCancelable(Function3<String, P, C, JobHandle<C>> run) {
+         return runCancelableCS((s, p, c) -> CompletableFuture.completedFuture(run.apply(s, p, c)));
+      }
+
+      public JobSettingsConfiguration<P, C> runCS(Function3<String, P, C, CompletionStage<C>> run) {
+         return fromCancelable((s, p, c) -> JobHandles.create(run.apply(s, p, c)));
+      }
+
+      public JobSettingsConfiguration<P, C> run(Function3<String, P, C, C> run) {
+         return runCS((s, p, c) -> CompletableFuture.supplyAsync(() -> Operators.suppressExceptions(() -> run.apply(s, p, c))));
+      }
+
+      public JobSettingsConfiguration<P, C> runCS(Function2<String, P, CompletionStage<?>> run) {
+         return runCS((s, p, c) -> run.apply(s, p).thenApply(i -> c));
+      }
+
+      public JobSettingsConfiguration<P, C> run(Procedure2<String, P> run) {
+         return runCS((s, p) -> {
+            run.apply(s, p);
+            return CompletableFuture.completedFuture(Nothing.getInstance());
+         });
+      }
+
 
    }
 
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
-   public static class WithRunnableBuilder<P> {
+   public static class JobSettingsConfiguration<P, C> {
 
-      private RuntimeConfiguration runtimeConfiguration;
+      private final Name name;
 
-      private Name name;
+      private final RuntimeConfiguration runtimeConfiguration;
 
-      private P defaultProperties;
+      private final JobTypeConfiguration<P, C> jobTypes;
 
-      private BiFunction<String, P, CompletionStage<JobHandle>> run;
+      private final Function3<String, P, C, CompletionStage<JobHandle<C>>> run;
 
       private List<ScheduleExecution<P>> scheduleExecutions;
 
@@ -146,69 +106,71 @@ public final class JobDefinitions {
 
       private Logger logger;
 
-      public static <P> WithRunnableBuilder<P> apply(RuntimeConfiguration runtimeConfiguration, Name name, P defaultProperties, BiFunction<String, P, CompletionStage<JobHandle>> run) {
+      public static <P, C> JobSettingsConfiguration<P, C> apply(
+         Name name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes, Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
+
          var logger = LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name.getValue())); // TODO: Name to snake case
-         return apply(runtimeConfiguration, name, defaultProperties, run, Lists.newArrayList(), CombinedJobMonitor.apply(), logger);
+         return apply(name, runtimeConfiguration, jobTypes, run, Lists.newArrayList(), CombinedJobMonitor.apply(), logger);
       }
 
-      public JobDefinition<P> build() {
-         return SimpleJobDefinition.apply(run, name, defaultProperties, logger, scheduleExecutions, monitors);
+      public JobDefinition<P, C> build() {
+         return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors);
       }
 
       /*
        * Monitors
        */
-      public WithRunnableBuilder<P> withHistoryMonitor() {
+      public JobSettingsConfiguration<P, C> withHistoryMonitor() {
          return withHistoryMonitor(10);
       }
 
-      public WithRunnableBuilder<P> withHistoryMonitor(int limit) {
+      public JobSettingsConfiguration<P, C> withHistoryMonitor(int limit) {
          return withMonitor(InMemoryHistoryJobMonitor.apply(limit, runtimeConfiguration.getObjectMapper()));
       }
 
-      public WithRunnableBuilder<P> withLoggingMonitor() {
+      public JobSettingsConfiguration<P, C> withLoggingMonitor() {
          return withMonitor(LoggingJobMonitor.apply(name.getValue(), logger, runtimeConfiguration.getObjectMapper()));
       }
 
-      public WithRunnableBuilder<P> withPrometheusMetricsMonitor() {
+      public JobSettingsConfiguration<P, C> withPrometheusMetricsMonitor() {
          return withMonitor(PrometheusJobMonitor.apply(name.getValue(), runtimeConfiguration.getCollectorRegistry()));
       }
 
-      public WithRunnableBuilder<P> withMonitor(JobMonitor<P> monitor) {
-         monitors = monitors.withMonitor(monitor);
+      public JobSettingsConfiguration<P, C> withMonitor(JobMonitor<P> monitor) {
+         monitors.withMonitor(monitor);
          return this;
       }
 
       /*
        * Schedule
        */
-      public WithRunnableBuilder<P> withScheduledExecution(ScheduleExecution<P> execution) {
+      public JobSettingsConfiguration<P, C> withScheduledExecution(ScheduleExecution<P> execution) {
          this.scheduleExecutions.add(execution);
          return this;
       }
 
-      public WithRunnableBuilder<P> withScheduledExecution(CronExpression cron, P properties, boolean queue) {
+      public JobSettingsConfiguration<P, C> withScheduledExecution(CronExpression cron, P properties, boolean queue) {
          return withScheduledExecution(ScheduleExecution.apply(properties, queue, cron));
       }
 
-      public WithRunnableBuilder<P> withScheduledExecution(CronExpression cron, P properties) {
+      public JobSettingsConfiguration<P, C> withScheduledExecution(CronExpression cron, P properties) {
          return withScheduledExecution(cron, properties, true);
       }
 
-      public WithRunnableBuilder<P> withScheduledExecution(CronExpression cron) {
-         return withScheduledExecution(cron, defaultProperties, true);
+      public JobSettingsConfiguration<P, C> withScheduledExecution(CronExpression cron) {
+         return withScheduledExecution(cron, jobTypes.defaultProperties, true);
       }
 
    }
 
    @AllArgsConstructor(staticName = "apply")
-   static class SimpleJobDefinition<P> implements JobDefinition<P> {
-
-      private final BiFunction<String, P, CompletionStage<JobHandle>> run;
+   static class SimpleJobDefinition<P, C> implements JobDefinition<P, C> {
 
       private final Name name;
 
-      private final P defaultProperties;
+      private final JobTypeConfiguration<P, C> jobTypes;
+
+      private final Function3<String, P, C, CompletionStage<JobHandle<C>>> run;
 
       private final Logger logger;
 
@@ -218,7 +180,12 @@ public final class JobDefinitions {
 
       @Override
       public P getDefaultProperties() {
-         return defaultProperties;
+         return jobTypes.defaultProperties;
+      }
+
+      @Override
+      public C getInitialContext() {
+         return null;
       }
 
       @Override
@@ -242,18 +209,26 @@ public final class JobDefinitions {
       }
 
       @Override
-      public CompletionStage<JobHandle> run(String runId, P properties) {
-         return run.apply(runId, properties);
+      public CompletionStage<JobHandle<C>> run(String executionId, P properties, C context) {
+         return Operators.suppressExceptions(() -> run.apply(executionId, properties, context));
       }
 
    }
 
-   public InitialBuilder create(Name name) {
-      return InitialBuilder.apply(runtimeConfiguration, name);
+   public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Nothing>, JobTypeConfiguration<P, C>> cfg) {
+      return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
    }
 
-   public InitialBuilder create(String name) {
-      return create(Name.apply(name));
+   public <P, C> JobRunnableConfiguration<P, C> create(String name, P defaultProperties, C initialContext) {
+      return create(name, cfg -> JobTypeConfiguration.apply(defaultProperties, initialContext));
+   }
+
+   public <P> JobRunnableConfiguration<P, Nothing> create(String name, P defaultProperties) {
+      return create(name, defaultProperties, Nothing.getInstance());
+   }
+
+   public JobRunnableConfiguration<Nothing, Nothing> create(String name) {
+      return create(name, Nothing.getInstance());
    }
 
 }

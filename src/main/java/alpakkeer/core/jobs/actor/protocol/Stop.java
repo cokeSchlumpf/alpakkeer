@@ -7,7 +7,7 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class Stop<P> implements Message<P> {
+public class Stop<P, C> implements Message<P, C> {
 
    boolean clearQueue;
 

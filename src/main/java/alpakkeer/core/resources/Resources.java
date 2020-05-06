@@ -24,14 +24,14 @@ public class Resources {
 
    private final CronScheduler scheduler;
 
-   private final AtomicReference<Map<Name, Job<?>>> jobs;
+   private final AtomicReference<Map<Name, Job<?, ?>>> jobs;
 
    public static Resources apply(ActorSystem system, CronScheduler scheduler) {
       return new Resources(system, scheduler, new AtomicReference<>(Maps.newHashMap()));
    }
 
-   public <P> Job<P> addJob(JobDefinition<P> jobDefinition) {
-      AtomicReference<Job<P>> result = new AtomicReference<>();
+   public <P, C> Job<P, C> addJob(JobDefinition<P, C> jobDefinition) {
+      AtomicReference<Job<P, C>> result = new AtomicReference<>();
 
       jobs.getAndUpdate(currentJobs -> {
          if (currentJobs.containsKey(jobDefinition.getName())) {
@@ -47,7 +47,7 @@ public class Resources {
       return result.get();
    }
 
-   public List<Job<?>> getJobs() {
+   public List<Job<?, ?>> getJobs() {
       return jobs.get()
          .values()
          .stream()
@@ -55,7 +55,7 @@ public class Resources {
          .collect(Collectors.toList());
    }
 
-   public Optional<Job<?>> getJob(Name name) {
+   public Optional<Job<?, ?>> getJob(Name name) {
       return Optional.ofNullable(jobs.get().get(name));
    }
 

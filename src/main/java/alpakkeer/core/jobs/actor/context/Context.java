@@ -18,9 +18,9 @@ import java.util.stream.Collectors;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class Context<P> {
+public class Context<P, C> {
 
-   JobDefinition<P> jobDefinition;
+   JobDefinition<P, C> jobDefinition;
 
    CronScheduler scheduler;
 
@@ -28,7 +28,7 @@ public class Context<P> {
 
    List<QueuedExecution<P>> queue;
 
-   public static <P> Context<P> apply(JobDefinition<P> jobDefinition, CronScheduler scheduler) {
+   public static <P, C> Context<P, C> apply(JobDefinition<P, C> jobDefinition, CronScheduler scheduler) {
       return apply(jobDefinition, scheduler, Lists.newArrayList(), Lists.newArrayList());
    }
 

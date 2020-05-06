@@ -10,17 +10,17 @@ import com.google.common.collect.Lists;
 
 import java.util.List;
 
-public final class Stopping<P> extends State<P> {
+public final class Stopping<P, C> extends State<P, C> {
 
    private final CurrentExecution<P> currentExecution;
 
-   private final List<Stop<P>> stopRequests;
+   private final List<Stop<P, C>> stopRequests;
 
    private Stopping(
-      ActorContext<Message<P>> actor,
-      Context<P> context,
+      ActorContext<Message<P, C>> actor,
+      Context<P, C> context,
       CurrentExecution<P> currentExecution,
-      List<Stop<P>> stopRequests) {
+      List<Stop<P, C>> stopRequests) {
 
       super(JobState.STOPPING, actor, context);
 
@@ -28,17 +28,17 @@ public final class Stopping<P> extends State<P> {
       this.stopRequests = stopRequests;
    }
 
-   public static <P> Stopping<P> apply(
-      ActorContext<Message<P>> actor,
-      Context<P> context,
+   public static <P, C> Stopping<P, C> apply(
+      ActorContext<Message<P, C>> actor,
+      Context<P, C> context,
       CurrentExecution<P> currentExecution,
-      Stop<P> stopRequest) {
+      Stop<P, C> stopRequest) {
 
       return new Stopping<>(actor, context, currentExecution, Lists.newArrayList(stopRequest));
    }
 
    @Override
-   public State<P> onCompleted(Completed<P> completed) {
+   public State<P, C> onCompleted(Completed<P, C> completed) {
       LOG.info("Successfully stopped job execution `{}`", currentExecution.getId());
       context.getJobDefinition().getMonitors().onStopped(currentExecution.getId());
       stopRequests.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
@@ -46,7 +46,7 @@ public final class Stopping<P> extends State<P> {
    }
 
    @Override
-   public State<P> onFailed(Failed<P> failed) {
+   public State<P, C> onFailed(Failed<P, C> failed) {
       LOG.warn(String.format("Stopped job execution `%s` with failure.", currentExecution.getId()), failed.getException());
       context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
       stopRequests.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
@@ -54,19 +54,19 @@ public final class Stopping<P> extends State<P> {
    }
 
    @Override
-   public State<P> onStart(Start<P> start) {
+   public State<P, C> onStart(Start<P, C> start) {
       queue(start);
       return this;
    }
 
    @Override
-   public State<P> onStarted(Started<P> started) {
+   public State<P, C> onStarted(Started<P, C> started) {
       LOG.warn("Received unexpected message `Started` in state `stopping`");
       return this;
    }
 
    @Override
-   public State<P> onStop(Stop<P> stop) {
+   public State<P, C> onStop(Stop<P, C> stop) {
       stopRequests.add(stop);
       if (stop.isClearQueue()) context.getQueue().clear();
       return this;

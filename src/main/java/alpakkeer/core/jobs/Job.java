@@ -8,9 +8,9 @@ import alpakkeer.core.scheduler.model.CronExpression;
 
 import java.util.concurrent.CompletionStage;
 
-public interface Job<P> {
+public interface Job<P, C> {
 
-   JobDefinition<P> getDefinition();
+   JobDefinition<P, C> getDefinition();
 
    CompletionStage<Done> start(P properties, Boolean queue);
 
@@ -18,11 +18,11 @@ public interface Job<P> {
 
    CompletionStage<ScheduledExecution<P>> schedule(P properties, Boolean queue, CronExpression cron);
 
-   CompletionStage<JobStatus<P>> getStatus();
+   CompletionStage<JobStatus<P, C>> getStatus();
 
-   CompletionStage<JobStatusDetails<P>> getStatusDetails();
+   CompletionStage<JobStatusDetails<P, C>> getStatusDetails();
 
-   default CompletionStage<JobStatus<?>> getStatusUnchecked() {
+   default CompletionStage<JobStatus<?, ?>> getStatusUnchecked() {
       return getStatus().thenApply(s -> s);
    }
 

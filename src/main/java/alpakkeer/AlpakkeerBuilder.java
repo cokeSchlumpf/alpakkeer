@@ -19,7 +19,7 @@ public final class AlpakkeerBuilder {
 
    private ActorSystem system;
 
-   private List<JobDefinition<?>> jobs;
+   private List<JobDefinition<?, ?>> jobs;
 
    private RuntimeConfiguration runtimeConfig;
 
@@ -37,7 +37,7 @@ public final class AlpakkeerBuilder {
       return this;
    }
 
-   public AlpakkeerBuilder withJob(Function<JobDefinitions, JobDefinition<?>> builder) {
+   public AlpakkeerBuilder withJob(Function<JobDefinitions, JobDefinition<?, ?>> builder) {
       jobs.add(builder.apply(JobDefinitions.apply(runtimeConfig)));
       return this;
    }

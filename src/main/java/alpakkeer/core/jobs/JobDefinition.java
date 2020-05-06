@@ -6,11 +6,12 @@ import alpakkeer.core.values.Name;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 
-public interface JobDefinition<P> {
+public interface JobDefinition<P, C> extends JobFunction<P, C> {
 
    P getDefaultProperties();
+
+   C getInitialContext();
 
    Name getName();
 
@@ -19,7 +20,5 @@ public interface JobDefinition<P> {
    List<ScheduleExecution<P>> getSchedule();
 
    CombinedJobMonitor<P> getMonitors();
-
-   CompletionStage<JobHandle> run(String runId, P properties);
 
 }

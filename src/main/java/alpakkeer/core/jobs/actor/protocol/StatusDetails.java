@@ -8,8 +8,8 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class StatusDetails<P> implements Message<P> {
+public class StatusDetails<P, C> implements Message<P, C> {
 
-   ActorRef<JobStatusDetails<P>> replyTo;
+   ActorRef<JobStatusDetails<P, C>> replyTo;
 
 }

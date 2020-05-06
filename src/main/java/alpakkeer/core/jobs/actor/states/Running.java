@@ -7,48 +7,48 @@ import alpakkeer.core.jobs.actor.context.CurrentExecution;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
 
-public final class Running<P> extends State<P> {
+public final class Running<P, C> extends State<P, C> {
 
    private final CurrentExecution<P> currentExecution;
 
    private final JobHandle handle;
 
-   private Running(ActorContext<Message<P>> actor, Context<P> context, CurrentExecution<P> currentExecution, JobHandle handle) {
+   private Running(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle handle) {
       super(JobState.RUNNING, actor, context);
       this.currentExecution = currentExecution;
       this.handle = handle;
    }
 
-   public static <P> Running<P> apply(ActorContext<Message<P>> actor, Context<P> context, CurrentExecution<P> currentExecution, JobHandle handle) {
+   public static <P, C> Running<P, C> apply(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle handle) {
       return new Running<>(actor, context, currentExecution, handle);
    }
 
    @Override
-   public State<P> onCompleted(Completed<P> completed) {
+   public State<P, C> onCompleted(Completed<P, C> completed) {
       context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId());
       return processQueue();
    }
 
    @Override
-   public State<P> onFailed(Failed<P> failed) {
+   public State<P, C> onFailed(Failed<P, C> failed) {
       context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
       return processQueue();
    }
 
    @Override
-   public State<P> onStart(Start<P> start) {
+   public State<P, C> onStart(Start<P, C> start) {
       queue(start);
       return this;
    }
 
    @Override
-   public State<P> onStarted(Started<P> started) {
+   public State<P, C> onStarted(Started<P, C> started) {
       LOG.warn("Received unexpected message `Started` in state `running`");
       return this;
    }
 
    @Override
-   public State<P> onStop(Stop<P> stop) {
+   public State<P, C> onStop(Stop<P, C> stop) {
       LOG.info("Received request to stop job execution `{}`", currentExecution.getId());
 
       handle.stop();

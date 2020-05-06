@@ -6,8 +6,8 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
-public class Started<P> implements Message<P> {
+public class Started<P, C> implements Message<P, C> {
 
-   JobHandle handle;
+   JobHandle<C> handle;
 
 }

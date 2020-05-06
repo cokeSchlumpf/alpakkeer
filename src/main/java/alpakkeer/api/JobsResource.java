@@ -121,7 +121,7 @@ public final class JobsResource {
             job -> {
                var json = ctx.body();
                var request = Json.apply(om).deserializeGenericClassFromJson(json, StartExecution.class, job.getDefinition().getDefaultProperties().getClass());
-               var result = ((Job<Object>) job).start(request.getProperties(), request.isQueue());
+               var result = ((Job<Object, Object>) job).start(request.getProperties(), request.isQueue());
 
                result.whenComplete((done, ex) -> {
                   if (ex != null && Operators.isCause(AlreadyRunningException.class, ex)) {
