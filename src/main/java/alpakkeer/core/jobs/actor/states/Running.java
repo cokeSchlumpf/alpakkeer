@@ -13,23 +13,24 @@ public final class Running<P, C> extends State<P, C> {
 
    private final JobHandle<C> handle;
 
-   private Running(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle handle) {
+   private Running(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle<C> handle) {
       super(JobState.RUNNING, actor, context);
       this.currentExecution = currentExecution;
       this.handle = handle;
    }
 
-   public static <P, C> Running<P, C> apply(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle handle) {
+   public static <P, C> Running<P, C> apply(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle<C> handle) {
       return new Running<>(actor, context, currentExecution, handle);
    }
 
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
-      context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId());
       if (completed.getResult().isPresent()) {
+         context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId(), completed.getResult().get());
          setCurrentContext(completed.getResult().get());
          return Finalizing.apply(state, actor, context);
       } else {
+         context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId());
          return processQueue();
       }
    }

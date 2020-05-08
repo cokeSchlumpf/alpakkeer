@@ -105,7 +105,7 @@ public final class JobDefinitions {
 
       private List<ScheduleExecution<P>> scheduleExecutions;
 
-      private CombinedJobMonitor<P> monitors;
+      private CombinedJobMonitor<P, C> monitors;
 
       private Logger logger;
 
@@ -139,7 +139,7 @@ public final class JobDefinitions {
          return withMonitor(PrometheusJobMonitor.apply(name.getValue(), runtimeConfiguration.getCollectorRegistry()));
       }
 
-      public JobSettingsConfiguration<P, C> withMonitor(JobMonitor<P> monitor) {
+      public JobSettingsConfiguration<P, C> withMonitor(JobMonitor<P, C> monitor) {
          monitors.withMonitor(monitor);
          return this;
       }
@@ -179,7 +179,7 @@ public final class JobDefinitions {
 
       private final List<ScheduleExecution<P>> schedule;
 
-      private final CombinedJobMonitor<P> monitors;
+      private final CombinedJobMonitor<P, C> monitors;
 
       @Override
       public P getDefaultProperties() {
@@ -207,7 +207,7 @@ public final class JobDefinitions {
       }
 
       @Override
-      public CombinedJobMonitor<P> getMonitors() {
+      public CombinedJobMonitor<P, C> getMonitors() {
          return monitors;
       }
 

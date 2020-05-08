@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor(staticName = "apply")
-public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
+public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C> {
 
    int limit;
 
@@ -28,9 +28,9 @@ public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
 
    ConcurrentHashMap<String, Running<P>> runningExecutions;
 
-   EvictingQueue<Executed<P>> history;
+   EvictingQueue<Executed<P, C>> history;
 
-   public static <P> InMemoryHistoryJobMonitor<P> apply(int limit, ObjectMapper om) {
+   public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(int limit, ObjectMapper om) {
       return apply(limit, om, new ConcurrentHashMap<>(), EvictingQueue.create(limit));
    }
 
@@ -49,7 +49,7 @@ public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
 
    @Value
    @AllArgsConstructor(staticName = "apply")
-   private static class Executed<P> {
+   private static class Executed<P, C> {
 
       @JsonProperty("id")
       String executionId;
@@ -66,8 +66,11 @@ public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
       @JsonProperty("duration-in-seconds")
       Long durationInSeconds;
 
+      @JsonProperty("exited-with")
+      JobResult exited;
+
       @JsonProperty("result")
-      JobResult result;
+      C result;
 
       @JsonProperty
       String exception;
@@ -91,11 +94,11 @@ public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
 
    @Value
    @AllArgsConstructor(staticName = "apply")
-   private static class Status<P> {
+   private static class Status<P, C> {
 
       List<Running<P>> running;
 
-      List<Executed<P>> executed;
+      List<Executed<P, C>> executed;
 
    }
 
@@ -112,17 +115,27 @@ public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
 
    @Override
    public void onFailed(String executionId, Throwable cause) {
-      addToHistory(executionId, JobResult.FAILED, ExceptionUtils.getMessage(cause));
+      addToHistory(executionId, JobResult.FAILED, null, ExceptionUtils.getMessage(cause));
+   }
+
+   @Override
+   public void onCompleted(String executionId, C result) {
+      addToHistory(executionId, JobResult.COMPLETED, result, null);
    }
 
    @Override
    public void onCompleted(String executionId) {
-      addToHistory(executionId, JobResult.COMPLETED, null);
+      addToHistory(executionId, JobResult.COMPLETED, null, null);
+   }
+
+   @Override
+   public void onStopped(String executionId, C result) {
+      addToHistory(executionId, JobResult.STOPPED, result, null);
    }
 
    @Override
    public void onStopped(String executionId) {
-      addToHistory(executionId, JobResult.STOPPED, null);
+      addToHistory(executionId, JobResult.STOPPED, null, null);
    }
 
    @Override
@@ -142,14 +155,14 @@ public final class InMemoryHistoryJobMonitor<P> implements JobMonitor<P> {
          history.stream().sorted(Comparator.comparing(Executed::getStarted, Comparator.reverseOrder())).collect(Collectors.toList()))));
    }
 
-   private void addToHistory(String executionId, JobResult result, String error) {
+   private void addToHistory(String executionId, JobResult completed, C result, String error) {
       if (runningExecutions.containsKey(executionId)) {
          var exec = runningExecutions.remove(executionId);
          var seconds = Duration.ofNanos(System.nanoTime() - exec.startNanos).getSeconds();
 
          history.add(Executed.apply(
             executionId, exec.getProperties(), exec.getStarted(),
-            LocalDateTime.now(), seconds, result, error));
+            LocalDateTime.now(), seconds, completed, result, error));
       }
    }
 

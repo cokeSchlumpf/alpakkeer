@@ -10,15 +10,15 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor(staticName = "apply")
-public final class CombinedJobMonitor<P> implements JobMonitor<P> {
+public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
 
-   private final List<JobMonitor<P>> monitors;
+   private final List<JobMonitor<P, C>> monitors;
 
-   public static <P> CombinedJobMonitor<P> apply() {
+   public static <P, C> CombinedJobMonitor<P, C> apply() {
       return CombinedJobMonitor.apply(Lists.newArrayList());
    }
 
-   public CombinedJobMonitor<P> withMonitor(JobMonitor<P> monitor) {
+   public CombinedJobMonitor<P, C> withMonitor(JobMonitor<P, C> monitor) {
       this.monitors.add(monitor);
       return this;
    }
@@ -39,8 +39,18 @@ public final class CombinedJobMonitor<P> implements JobMonitor<P> {
    }
 
    @Override
+   public void onCompleted(String executionId, C result) {
+      monitors.forEach(m -> m.onCompleted(executionId, result));
+   }
+
+   @Override
    public void onCompleted(String executionId) {
       monitors.forEach(m -> m.onCompleted(executionId));
+   }
+
+   @Override
+   public void onStopped(String executionId, C result) {
+      monitors.forEach(m -> m.onStopped(executionId, result));
    }
 
    @Override

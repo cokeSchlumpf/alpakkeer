@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @AllArgsConstructor(staticName = "apply")
-public final class LoggingJobMonitor<P> implements JobMonitor<P> {
+public final class LoggingJobMonitor<P, C> implements JobMonitor<P, C> {
 
    private final String name;
 
@@ -20,15 +20,15 @@ public final class LoggingJobMonitor<P> implements JobMonitor<P> {
 
    private final ObjectMapper om;
 
-   public static <P> LoggingJobMonitor<P> apply(String name) {
+   public static <P, C> LoggingJobMonitor<P, C> apply(String name) {
       return apply(name, LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name)), ObjectMapperFactory.apply().create(true));
    }
 
-   public static <P> LoggingJobMonitor<P> apply(String name, Logger logger) {
+   public static <P, C> LoggingJobMonitor<P, C> apply(String name, Logger logger) {
       return apply(name, logger, ObjectMapperFactory.apply().create(true));
    }
 
-   public static <P> LoggingJobMonitor<P> apply(String name, ObjectMapper om) {
+   public static <P, C> LoggingJobMonitor<P, C> apply(String name, ObjectMapper om) {
       return apply(name, LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name)), om);
    }
 
@@ -53,8 +53,24 @@ public final class LoggingJobMonitor<P> implements JobMonitor<P> {
    }
 
    @Override
+   public void onCompleted(String executionId, C result) {
+      Log.info(
+         "Execution `{}` of job `{}` finished successfully with result:\n{}",
+         executionId, name,
+         Operators.ignoreExceptionsWithDefault(() -> om.writeValueAsString(result), String.valueOf(result)));
+   }
+
+   @Override
    public void onCompleted(String executionId) {
       Log.info("Execution `{}` of job `{}` finished successfully", executionId, name);
+   }
+
+   @Override
+   public void onStopped(String executionId, C result) {
+      Log.info(
+         "Execution `{}` of job `{}` stopped with result:\n{}",
+         executionId, name,
+         Operators.ignoreExceptionsWithDefault(() -> om.writeValueAsString(result), String.valueOf(result)));
    }
 
    @Override

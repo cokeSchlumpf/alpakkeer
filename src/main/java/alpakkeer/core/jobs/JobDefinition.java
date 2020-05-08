@@ -19,6 +19,6 @@ public interface JobDefinition<P, C> extends JobFunction<P, C> {
 
    List<ScheduleExecution<P>> getSchedule();
 
-   CombinedJobMonitor<P> getMonitors();
+   CombinedJobMonitor<P, C> getMonitors();
 
 }

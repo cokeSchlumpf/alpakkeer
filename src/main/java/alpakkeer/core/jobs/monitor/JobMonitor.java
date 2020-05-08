@@ -3,7 +3,7 @@ package alpakkeer.core.jobs.monitor;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-public interface JobMonitor<P> {
+public interface JobMonitor<P, C> {
 
    void onTriggered(String executionId, P properties);
 
@@ -11,7 +11,11 @@ public interface JobMonitor<P> {
 
    void onFailed(String executionId, Throwable cause);
 
+   void onCompleted(String executionId, C result);
+
    void onCompleted(String executionId);
+
+   void onStopped(String executionId, C result);
 
    void onStopped(String executionId);
 

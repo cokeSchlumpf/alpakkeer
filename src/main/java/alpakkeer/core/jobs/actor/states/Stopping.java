@@ -39,14 +39,14 @@ public final class Stopping<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
-      LOG.info("Successfully stopped job execution `{}`", currentExecution.getId());
-      context.getJobDefinition().getMonitors().onStopped(currentExecution.getId());
       stopRequests.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
 
       if (completed.getResult().isPresent()) {
+         context.getJobDefinition().getMonitors().onStopped(currentExecution.getId(), completed.getResult().get());
          setCurrentContext(completed.getResult().get());
          return Finalizing.apply(state, actor, context);
       } else {
+         context.getJobDefinition().getMonitors().onStopped(currentExecution.getId());
          return processQueue();
       }
    }

@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @AllArgsConstructor(staticName = "apply")
-public final class PrometheusJobMonitor<P> implements JobMonitor<P> {
+public final class PrometheusJobMonitor<P, C> implements JobMonitor<P, C> {
 
    @Value
    @AllArgsConstructor(staticName = "apply")
@@ -32,7 +32,7 @@ public final class PrometheusJobMonitor<P> implements JobMonitor<P> {
 
    private final Map<String, RunningJob> runningExecutions;
 
-   public static <P> PrometheusJobMonitor<P> apply(String name, CollectorRegistry registry) {
+   public static <P, C> PrometheusJobMonitor<P, C> apply(String name, CollectorRegistry registry) {
       Gauge queuedJobs = Gauge
          .build()
          .name(String.format("alpakkeer__jobs__%s__queued_executions", name))
@@ -74,6 +74,11 @@ public final class PrometheusJobMonitor<P> implements JobMonitor<P> {
    }
 
    @Override
+   public void onCompleted(String executionId, C result) {
+      onCompleted(executionId);
+   }
+
+   @Override
    public void onCompleted(String executionId) {
       if (runningExecutions.containsKey(executionId)) {
          var exec = runningExecutions.remove(executionId);
@@ -81,6 +86,11 @@ public final class PrometheusJobMonitor<P> implements JobMonitor<P> {
          jobDurations.observe(seconds);
          jobDuration.set(seconds);
       }
+   }
+
+   @Override
+   public void onStopped(String executionId, C result) {
+      onStopped(executionId);
    }
 
    @Override
