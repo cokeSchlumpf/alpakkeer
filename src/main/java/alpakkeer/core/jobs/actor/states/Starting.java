@@ -41,6 +41,12 @@ public final class Starting<P, C> extends State<P, C> {
    }
 
    @Override
+   public State<P, C> onFinalized(Finalized<P, C> finalized) {
+      LOG.warn("Received unexpected message `Finalized` in state `starting`");
+      return this;
+   }
+
+   @Override
    public State<P, C> onFailed(Failed<P, C> failed) {
       LOG.warn("An exception occurred while starting job", failed.getException());
       context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
@@ -61,7 +67,7 @@ public final class Starting<P, C> extends State<P, C> {
          if (exception != null) {
             actor.getSelf().tell(Failed.apply(exception));
          } else {
-            actor.getSelf().tell(Completed.apply());
+            actor.getSelf().tell(done.map(Completed::<P, C>apply).orElse(Completed.apply()));
          }
       });
 

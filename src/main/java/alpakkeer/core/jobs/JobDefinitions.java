@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -63,27 +64,29 @@ public final class JobDefinitions {
          return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run);
       }
 
-      public JobSettingsConfiguration<P, C> fromCancelable(Function3<String, P, C, JobHandle<C>> run) {
+      public JobSettingsConfiguration<P, C> runCancelable(Function3<String, P, C, JobHandle<C>> run) {
          return runCancelableCS((s, p, c) -> CompletableFuture.completedFuture(run.apply(s, p, c)));
       }
 
       public JobSettingsConfiguration<P, C> runCS(Function3<String, P, C, CompletionStage<C>> run) {
-         return fromCancelable((s, p, c) -> JobHandles.create(run.apply(s, p, c)));
+         return runCancelable((s, p, c) -> JobHandles.create(run.apply(s, p, c)));
       }
 
       public JobSettingsConfiguration<P, C> run(Function3<String, P, C, C> run) {
          return runCS((s, p, c) -> CompletableFuture.supplyAsync(() -> Operators.suppressExceptions(() -> run.apply(s, p, c))));
       }
 
-      public JobSettingsConfiguration<P, C> runCS(Function2<String, P, CompletionStage<?>> run) {
+      public JobSettingsConfiguration<P, C> runCS(Function2<String, P, CompletionStage<C>> run) {
          return runCS((s, p, c) -> run.apply(s, p).thenApply(i -> c));
       }
 
       public JobSettingsConfiguration<P, C> run(Procedure2<String, P> run) {
-         return runCS((s, p) -> {
-            run.apply(s, p);
-            return CompletableFuture.completedFuture(Nothing.getInstance());
-         });
+         return runCancelable((s, p, c) -> JobHandles
+            .createFromOptional(CompletableFuture
+               .supplyAsync(() -> {
+                  Operators.suppressExceptions(() -> run.apply(s, p));
+                  return Optional.empty();
+               })));
       }
 
 
@@ -185,7 +188,7 @@ public final class JobDefinitions {
 
       @Override
       public C getInitialContext() {
-         return null;
+         return jobTypes.initialContext;
       }
 
       @Override

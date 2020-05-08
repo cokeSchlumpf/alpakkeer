@@ -2,6 +2,7 @@ package alpakkeer.core.jobs.actor.states;
 
 import akka.Done;
 import akka.actor.typed.javadsl.ActorContext;
+import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.jobs.actor.context.Context;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
@@ -22,6 +23,12 @@ public final class Idle<P, C> extends State<P, C> {
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
       LOG.warn("Received unexpected message `Completed` in state `idle`");
+      return this;
+   }
+
+   @Override
+   public State<P, C> onFinalized(Finalized<P, C> finalized) {
+      LOG.warn("Received unexpected message `Finalized` in state `idle`");
       return this;
    }
 

@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
 public abstract class State<P, C> {
 
@@ -35,6 +36,8 @@ public abstract class State<P, C> {
    }
 
    public abstract State<P, C> onCompleted(Completed<P, C> completed);
+
+   public abstract State<P, C> onFinalized(Finalized<P, C> finalized);
 
    public abstract State<P, C> onFailed(Failed<P, C> failed);
 
@@ -98,10 +101,11 @@ public abstract class State<P, C> {
          .compose(
             context.getSchedule(),
             context.getJobDefinition().getMonitors().getStatus(),
-            (schedule, details) -> {
+            getCurrentContext(),
+            (schedule, details, ctx) -> {
                var jobStatus = JobStatus.apply(
                   context.getJobDefinition().getName().getValue(),
-                  state, (C) null, List.copyOf(context.getQueue()), schedule); // TODO: Set context
+                  state, ctx, List.copyOf(context.getQueue()), schedule);
 
                return JobStatusDetails.apply(jobStatus, details.orElse(null));
             })
@@ -113,6 +117,36 @@ public abstract class State<P, C> {
             } else {
                status.getReplyTo().tell(details);
             }
+         });
+   }
+
+   protected CompletionStage<C> getCurrentContext() {
+      return context
+         .getContextStore()
+         .<C>readLatestContext(context.getJobDefinition().getName().getValue())
+         .thenApply(opt -> opt.orElse(context.getJobDefinition().getInitialContext()))
+         .exceptionally(ex -> {
+            LOG.warn(String.format(
+               "An exception occurred while reading current context of job `%s`", context.getJobDefinition().getName().getValue()),
+               ex);
+
+            return context.getJobDefinition().getInitialContext();
+         });
+   }
+
+   protected void setCurrentContext(C ctx) {
+      context.getContextStore()
+         .saveContext(
+            context.getJobDefinition().getName().getValue(),
+            ctx)
+         .whenComplete((done, ex) -> {
+            if (ex != null) {
+               LOG.warn(
+                  String.format("An exception occurred while storing job context for job `%s`", context.getJobDefinition().getName().getValue()),
+                  ex);
+            }
+
+            actor.getSelf().tell(Finalized.apply());
          });
    }
 
@@ -131,7 +165,8 @@ public abstract class State<P, C> {
          return Idle.apply(actor, context);
       } else {
          var execution = context.getQueue().remove(0);
-         var eventualHandle = context.getJobDefinition().run(execution.getId(), execution.getProperties(), null); // TODO: Set context
+         var eventualHandle = getCurrentContext().thenCompose(
+            ctx -> context.getJobDefinition().run(execution.getId(), execution.getProperties(), ctx));
 
          eventualHandle.whenComplete((handle, ex) -> {
             if (ex != null) {

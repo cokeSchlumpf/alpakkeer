@@ -67,8 +67,8 @@ public final class Jobs {
 
    }
 
-   public static <P, C> Job<P, C> apply(ActorSystem system, CronScheduler scheduler, JobDefinition<P, C> definition) {
-      var behavior = JobActor.apply(definition, scheduler);
+   public static <P, C> Job<P, C> apply(ActorSystem system, CronScheduler scheduler, ContextStore contextStore, JobDefinition<P, C> definition) {
+      var behavior = JobActor.apply(definition, scheduler, contextStore);
       var actor = Adapter.spawn(system, behavior, definition.getName().getValue());
       var actorJob = ActorJob.apply(definition, actor, ActorPatterns.apply(system));
 

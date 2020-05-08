@@ -48,7 +48,7 @@ public final class AlpakkeerBuilder {
       }
 
       var scheduler = CronSchedulers.apply();
-      var resources = Resources.apply(system, scheduler);
+      var resources = Resources.apply(system, scheduler, runtimeConfig.getContextStore());
       this.jobs.forEach(resources::addJob);
 
       return Alpakkeer.apply(system, scheduler, resources, runtimeConfig.getObjectMapper());

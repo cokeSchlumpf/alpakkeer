@@ -1,6 +1,7 @@
 package alpakkeer.core.resources;
 
 import akka.actor.ActorSystem;
+import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.jobs.Job;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.Jobs;
@@ -24,10 +25,12 @@ public class Resources {
 
    private final CronScheduler scheduler;
 
+   private final ContextStore contextStore;
+
    private final AtomicReference<Map<Name, Job<?, ?>>> jobs;
 
-   public static Resources apply(ActorSystem system, CronScheduler scheduler) {
-      return new Resources(system, scheduler, new AtomicReference<>(Maps.newHashMap()));
+   public static Resources apply(ActorSystem system, CronScheduler scheduler, ContextStore contextStore) {
+      return new Resources(system, scheduler, contextStore, new AtomicReference<>(Maps.newHashMap()));
    }
 
    public <P, C> Job<P, C> addJob(JobDefinition<P, C> jobDefinition) {
@@ -37,7 +40,7 @@ public class Resources {
          if (currentJobs.containsKey(jobDefinition.getName())) {
             throw JobAlreadyExistsException.apply(jobDefinition.getName());
          } else {
-            var job = Jobs.apply(system, scheduler, jobDefinition);
+            var job = Jobs.apply(system, scheduler, contextStore, jobDefinition);
             currentJobs.put(jobDefinition.getName(), job);
             result.set(job);
             return currentJobs;

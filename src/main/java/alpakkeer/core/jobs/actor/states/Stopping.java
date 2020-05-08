@@ -42,7 +42,19 @@ public final class Stopping<P, C> extends State<P, C> {
       LOG.info("Successfully stopped job execution `{}`", currentExecution.getId());
       context.getJobDefinition().getMonitors().onStopped(currentExecution.getId());
       stopRequests.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
-      return processQueue();
+
+      if (completed.getResult().isPresent()) {
+         setCurrentContext(completed.getResult().get());
+         return Finalizing.apply(state, actor, context);
+      } else {
+         return processQueue();
+      }
+   }
+
+   @Override
+   public State<P, C> onFinalized(Finalized<P, C> finalized) {
+      LOG.warn("Received unexpected message `Finalized` in state `stopping`");
+      return this;
    }
 
    @Override

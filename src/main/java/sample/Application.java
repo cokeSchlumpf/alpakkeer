@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Value;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 public class Application {
 
@@ -23,11 +24,12 @@ public class Application {
       var alpakkeer = Alpakkeer
          .create()
          .withJob(builder -> builder
-            .create("sample-job", MyProperties.apply("hello"))
-            .run((s, p) -> {
-               System.out.println("Starting job - text: " + p.getText());
+            .create("sample-job", MyProperties.apply("hello"), LocalDateTime.now())
+            .run((s, p, c) -> {
+               System.out.println("Starting job - text: " + p.getText() + ", context: " + c);
                Thread.sleep(5000);
                System.out.println("Finishing job!");
+               return LocalDateTime.now();
             })
             .withHistoryMonitor(3)
             .withLoggingMonitor()

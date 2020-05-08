@@ -5,6 +5,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.actor.context.Context;
 import alpakkeer.core.jobs.actor.protocol.*;
@@ -16,13 +17,13 @@ public final class JobActor<P, C> extends AbstractBehavior<Message<P, C>> {
 
    private State<P, C> state;
 
-   private JobActor(ActorContext<Message<P, C>> context, JobDefinition<P, C> definition, CronScheduler scheduler) {
+   private JobActor(ActorContext<Message<P, C>> context, JobDefinition<P, C> definition, CronScheduler scheduler, ContextStore contextStore) {
       super(context);
-      this.state = Idle.apply(context, Context.apply(definition, scheduler));
+      this.state = Idle.apply(context, Context.apply(definition, scheduler, contextStore));
    }
 
-   public static <P, C> Behavior<Message<P, C>> apply(JobDefinition<P, C> definition, CronScheduler scheduler) {
-      return Behaviors.setup(ctx -> new JobActor<>(ctx, definition, scheduler));
+   public static <P, C> Behavior<Message<P, C>> apply(JobDefinition<P, C> definition, CronScheduler scheduler, ContextStore contextStore) {
+      return Behaviors.setup(ctx -> new JobActor<>(ctx, definition, scheduler, contextStore));
    }
 
    @Override
@@ -30,6 +31,7 @@ public final class JobActor<P, C> extends AbstractBehavior<Message<P, C>> {
    public Receive<Message<P, C>> createReceive() {
       return newReceiveBuilder()
          .onMessage(Completed.class, completed -> this.onCompleted((Completed<P, C>) completed))
+         .onMessage(Finalized.class, finalized -> this.onFinalized((Finalized<P, C>) finalized))
          .onMessage(Schedule.class, schedule -> this.onSchedule((Schedule<P, C>) schedule))
          .onMessage(Scheduled.class, scheduled -> this.onScheduled((Scheduled<P, C>) scheduled))
          .onMessage(Start.class, start -> this.onStart((Start<P, C>) start))
@@ -43,6 +45,11 @@ public final class JobActor<P, C> extends AbstractBehavior<Message<P, C>> {
 
    private Behavior<Message<P, C>> onCompleted(Completed<P, C> completed) {
       state = state.onCompleted(completed);
+      return Behaviors.same();
+   }
+
+   private Behavior<Message<P, C>> onFinalized(Finalized<P, C> finalized) {
+      state = state.onFinalized(finalized);
       return Behaviors.same();
    }
 

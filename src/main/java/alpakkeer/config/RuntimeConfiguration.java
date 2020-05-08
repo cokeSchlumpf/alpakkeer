@@ -1,5 +1,7 @@
 package alpakkeer.config;
 
+import alpakkeer.core.jobs.ContextStore;
+import alpakkeer.core.jobs.ContextStores;
 import alpakkeer.core.util.ObjectMapperFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.prometheus.client.CollectorRegistry;
@@ -14,8 +16,13 @@ public final class RuntimeConfiguration {
 
    CollectorRegistry collectorRegistry;
 
+   ContextStore contextStore;
+
    public static RuntimeConfiguration apply() {
-      return apply(ObjectMapperFactory.apply().create(true), CollectorRegistry.defaultRegistry);
+      return apply(
+         ObjectMapperFactory.apply().create(true),
+         CollectorRegistry.defaultRegistry,
+         ContextStores.apply().create());
    }
 
    public RuntimeConfiguration withObjectMapper(ObjectMapper om) {
@@ -25,6 +32,11 @@ public final class RuntimeConfiguration {
 
    public RuntimeConfiguration withCollectorRegistry(CollectorRegistry registry) {
       this.collectorRegistry = registry;
+      return this;
+   }
+
+   public RuntimeConfiguration withContextStore(ContextStore contextStore) {
+      this.contextStore = contextStore;
       return this;
    }
 

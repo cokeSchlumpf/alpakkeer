@@ -1,22 +1,21 @@
 package alpakkeer.core.util;
 
 import akka.japi.function.Function2;
+import akka.japi.function.Function3;
 import com.google.common.hash.Hashing;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class Operators {
-
-   private static final Logger LOG = LoggerFactory.getLogger(Operators.class);
 
    private Operators() {
 
@@ -32,23 +31,32 @@ public final class Operators {
          .thenApply(v -> Operators.suppressExceptions(() -> combineWith.apply(f1.join(), f2.join())));
    }
 
+   public static <T1, T2, T3, R> CompletionStage<R> compose(
+      CompletionStage<T1> cs1, CompletionStage<T2> cs2, CompletionStage<T3> cs3, Function3<T1, T2, T3, R> combineWith) {
+      CompletableFuture<T1> f1 = cs1.toCompletableFuture();
+      CompletableFuture<T2> f2 = cs2.toCompletableFuture();
+      CompletableFuture<T3> f3 = cs3.toCompletableFuture();
+
+      return CompletableFuture
+         .allOf(f1, f2, f3)
+         .thenApply(v -> Operators.suppressExceptions(() -> combineWith.apply(f1.join(), f2.join(), f3.join())));
+   }
+
    public static <T> CompletionStage<List<T>> allOf(List<CompletionStage<T>> futures) {
       AtomicReference<List<T>> results = new AtomicReference<>(new ArrayList<>());
 
       CompletableFuture<List<T>> result = new CompletableFuture<>();
 
       futures.forEach(f -> {
-         f.thenAccept(r -> {
-             results.getAndUpdate(currentResults -> {
-                 currentResults.add(r);
+         f.thenAccept(r -> results.getAndUpdate(currentResults -> {
+             currentResults.add(r);
 
-                 if (currentResults.size() == futures.size()) {
-                     result.complete(currentResults);
-                 }
+             if (currentResults.size() == futures.size()) {
+                 result.complete(currentResults);
+             }
 
-                 return currentResults;
-             });
-         });
+             return currentResults;
+         }));
 
          f.exceptionally(ex -> {
              result.completeExceptionally(ex);

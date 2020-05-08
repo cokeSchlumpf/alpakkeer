@@ -1,5 +1,6 @@
 package alpakkeer.core.jobs.actor.context;
 
+import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.model.QueuedExecution;
 import alpakkeer.core.jobs.model.ScheduledExecution;
@@ -24,12 +25,14 @@ public class Context<P, C> {
 
    CronScheduler scheduler;
 
+   ContextStore contextStore;
+
    List<ScheduledExecutionReference<P>> schedule;
 
    List<QueuedExecution<P>> queue;
 
-   public static <P, C> Context<P, C> apply(JobDefinition<P, C> jobDefinition, CronScheduler scheduler) {
-      return apply(jobDefinition, scheduler, Lists.newArrayList(), Lists.newArrayList());
+   public static <P, C> Context<P, C> apply(JobDefinition<P, C> jobDefinition, CronScheduler scheduler, ContextStore contextStore) {
+      return apply(jobDefinition, scheduler, contextStore, Lists.newArrayList(), Lists.newArrayList());
    }
 
    public void addScheduledExecution(ScheduledExecutionReference<P> scheduled) {

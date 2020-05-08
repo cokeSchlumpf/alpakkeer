@@ -18,23 +18,28 @@ public final class JobHandles {
    @AllArgsConstructor(staticName = "apply")
    private static class SimpleJobHandle<C> implements JobHandle<C> {
 
-      CompletionStage<C> done;
+      CompletionStage<Optional<C>> done;
 
       @Override
-      public CompletionStage<C> getCompletion() {
+      public CompletionStage<Optional<C>> getCompletion() {
          return done;
       }
 
       @Override
-      public CompletionStage<Optional<C>> stop() {
+      public void stop() {
          LOG.warn("Attempt to stop simple job - Simple jobs cannot be requested to stop; will continue processing.");
-         return done.thenApply(Optional::of);
       }
 
    }
 
    public static <C> JobHandle<C> create(CompletionStage<C> run) {
+      return SimpleJobHandle.apply(run.thenApply(Optional::of));
+   }
+
+   public static <C> JobHandle<C> createFromOptional(CompletionStage<Optional<C>> run) {
       return SimpleJobHandle.apply(run);
    }
+
+
 
 }

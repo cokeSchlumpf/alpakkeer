@@ -5,8 +5,8 @@ import java.util.concurrent.CompletionStage;
 
 public interface JobHandle<C> {
 
-   CompletionStage<C> getCompletion();
+   CompletionStage<Optional<C>> getCompletion();
 
-   CompletionStage<Optional<C>> stop();
+   void stop();
 
 }

@@ -1,13 +1,22 @@
 package alpakkeer.core.jobs.actor.protocol;
 
-public final class Completed<P, C> implements Message<P, C> {
+import lombok.AllArgsConstructor;
+import lombok.Value;
 
-   private Completed() {
+import java.util.Optional;
 
+@Value
+@AllArgsConstructor(staticName = "apply")
+public class Completed<P, C> implements Message<P, C> {
+
+   C result;
+
+   public static <P, C> Completed<P, C> apply() {
+      return apply(null);
    }
 
-    public static <P, C> Completed<P, C> apply() {
-       return new Completed<>();
-    }
+   public Optional<C> getResult() {
+      return Optional.ofNullable(result);
+   }
 
 }

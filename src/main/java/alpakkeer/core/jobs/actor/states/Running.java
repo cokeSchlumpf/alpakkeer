@@ -11,7 +11,7 @@ public final class Running<P, C> extends State<P, C> {
 
    private final CurrentExecution<P> currentExecution;
 
-   private final JobHandle handle;
+   private final JobHandle<C> handle;
 
    private Running(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle handle) {
       super(JobState.RUNNING, actor, context);
@@ -26,7 +26,18 @@ public final class Running<P, C> extends State<P, C> {
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
       context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId());
-      return processQueue();
+      if (completed.getResult().isPresent()) {
+         setCurrentContext(completed.getResult().get());
+         return Finalizing.apply(state, actor, context);
+      } else {
+         return processQueue();
+      }
+   }
+
+   @Override
+   public State<P, C> onFinalized(Finalized<P, C> finalized) {
+      LOG.warn("Received unexpected message `Finalized` in state `running`");
+      return this;
    }
 
    @Override
