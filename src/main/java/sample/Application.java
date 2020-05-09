@@ -3,6 +3,7 @@ package sample;
 import alpakkeer.Alpakkeer;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.util.Operators;
+import alpakkeer.samples.SampleStreams;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -25,12 +26,9 @@ public class Application {
          .create()
          .withJob(builder -> builder
             .create("sample-job", MyProperties.apply("hello"), LocalDateTime.now())
-            .run((s, p, c) -> {
-               System.out.println("Starting job - text: " + p.getText() + ", context: " + c);
-               Thread.sleep(5000);
-               System.out.println("Finishing job!");
-               return LocalDateTime.now();
-            })
+            .runGraph((s, p, c) -> SampleStreams
+               .checkpointMonitorSample()
+               .mapMaterializedValue(i -> i.thenApply(d -> LocalDateTime.now())))
             .withHistoryMonitor(3)
             .withLoggingMonitor()
             .withScheduledExecution(CronExpression.everyMinutes(1))

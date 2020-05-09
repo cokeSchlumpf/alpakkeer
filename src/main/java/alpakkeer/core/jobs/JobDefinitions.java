@@ -1,8 +1,10 @@
 package alpakkeer.core.jobs;
 
+import akka.actor.ActorSystem;
 import akka.japi.function.Function2;
 import akka.japi.function.Function3;
 import akka.japi.function.Procedure2;
+import akka.stream.javadsl.RunnableGraph;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.*;
@@ -14,7 +16,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,8 @@ import java.util.function.Function;
 
 @AllArgsConstructor(staticName = "apply")
 public final class JobDefinitions {
+
+   private CompletionStage<ActorSystem> system;
 
    private RuntimeConfiguration runtimeConfiguration;
 
@@ -50,15 +53,16 @@ public final class JobDefinitions {
 
    }
 
-   @Value
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class JobRunnableConfiguration<P, C> {
 
-      Name name;
+      private final Name name;
 
-      RuntimeConfiguration runtimeConfiguration;
+      private final RuntimeConfiguration runtimeConfiguration;
 
-      JobTypeConfiguration<P, C> jobTypes;
+      private final CompletionStage<ActorSystem> system;
+
+      private final JobTypeConfiguration<P, C> jobTypes;
 
       public JobSettingsConfiguration<P, C> runCancelableCS(Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
          return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run);
@@ -72,12 +76,20 @@ public final class JobDefinitions {
          return runCancelable((s, p, c) -> JobHandles.create(run.apply(s, p, c)));
       }
 
+      public JobSettingsConfiguration<P, C> runGraph(Function3<String, P, C, RunnableGraph<CompletionStage<C>>> run) {
+         return runCS((s, p, c) -> system.thenCompose(sys -> Operators.suppressExceptions(() -> run.apply(s, p, c)).run(sys)));
+      }
+
       public JobSettingsConfiguration<P, C> run(Function3<String, P, C, C> run) {
          return runCS((s, p, c) -> CompletableFuture.supplyAsync(() -> Operators.suppressExceptions(() -> run.apply(s, p, c))));
       }
 
       public JobSettingsConfiguration<P, C> runCS(Function2<String, P, CompletionStage<C>> run) {
          return runCS((s, p, c) -> run.apply(s, p).thenApply(i -> c));
+      }
+
+      public JobSettingsConfiguration<P, C> runGraph(Function2<String, P, RunnableGraph<CompletionStage<C>>> run) {
+         return runGraph((s, p, c) -> run.apply(s, p));
       }
 
       public JobSettingsConfiguration<P, C> run(Procedure2<String, P> run) {
@@ -219,7 +231,7 @@ public final class JobDefinitions {
    }
 
    public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Nothing>, JobTypeConfiguration<P, C>> cfg) {
-      return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
+      return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, system, cfg.apply(JobTypeConfiguration.apply()));
    }
 
    public <P, C> JobRunnableConfiguration<P, C> create(String name, P defaultProperties, C initialContext) {

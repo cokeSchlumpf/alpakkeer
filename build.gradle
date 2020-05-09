@@ -2,6 +2,7 @@ plugins {
     id 'io.franzbecker.gradle-lombok' version '3.3.0'
     id 'java'
     id 'maven-publish'
+    id 'scala'
 }
 
 group 'alpakkeer'
