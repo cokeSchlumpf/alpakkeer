@@ -78,4 +78,8 @@ gradle.properties
 .idea
 out
 
+### Alpakkeer ###
+application.local.conf
+tweets.csv
+
 # End of https://www.gitignore.io/api/java,macos,gradle

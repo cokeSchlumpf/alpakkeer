@@ -24,6 +24,7 @@ dependencies {
     compile group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0'
     compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.11.0'
     compile group: 'com.google.guava', name: 'guava',  version: '27.0-jre'
+    compile group: 'com.lightbend.akka', name: 'akka-stream-alpakka-csv_2.13', version: '2.0.0'
     compile group: 'com.typesafe.akka', name: 'akka-actor-typed_2.13', version: '2.6.4'
     compile group: 'com.typesafe.akka', name: 'akka-stream_2.13', version: '2.6.4'
     compile group: 'io.javalin', name: 'javalin', version: '3.8.0'
@@ -31,6 +32,7 @@ dependencies {
     compile group: 'io.prometheus', name: 'simpleclient', version: '0.8.1'
     compile group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.0.9'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
+    compile group: 'org.twitter4j', name: 'twitter4j-core', version: '4.0.7'
     compile group: 'org.quartz-scheduler', name: 'quartz', version: '2.3.2'
     compile group: 'org.webjars', name: 'swagger-ui', version: '3.24.3'
 
