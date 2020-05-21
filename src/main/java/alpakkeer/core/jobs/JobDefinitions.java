@@ -3,12 +3,14 @@ package alpakkeer.core.jobs;
 import akka.actor.ActorSystem;
 import akka.japi.function.Function2;
 import akka.japi.function.Function3;
+import akka.japi.function.Function4;
 import akka.japi.function.Procedure2;
 import akka.stream.javadsl.RunnableGraph;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.*;
 import alpakkeer.core.scheduler.model.CronExpression;
+import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.values.Name;
 import alpakkeer.core.values.Nothing;
@@ -64,8 +66,17 @@ public final class JobDefinitions {
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
+      private final CombinedJobMonitor<P, C> monitors;
+
+      public static <P, C> JobRunnableConfiguration<P, C> apply(
+         Name name, RuntimeConfiguration runtimeConfiguration, CompletionStage<ActorSystem> system,
+         JobTypeConfiguration<P, C> jobTypes) {
+
+         return apply(name, runtimeConfiguration, system, jobTypes, CombinedJobMonitor.apply());
+      }
+
       public JobSettingsConfiguration<P, C> runCancelableCS(Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
-         return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run);
+         return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run, monitors);
       }
 
       public JobSettingsConfiguration<P, C> runCancelable(Function3<String, P, C, JobHandle<C>> run) {
@@ -78,6 +89,13 @@ public final class JobDefinitions {
 
       public JobSettingsConfiguration<P, C> runGraph(Function3<String, P, C, RunnableGraph<CompletionStage<C>>> run) {
          return runCS((s, p, c) -> system.thenCompose(sys -> Operators.suppressExceptions(() -> run.apply(s, p, c)).run(sys)));
+      }
+
+      public JobSettingsConfiguration<P, C> runGraph(Function4<String, P, C, StreamBuilder, RunnableGraph<CompletionStage<C>>> run) {
+         return runGraph((s, p, c) -> {
+            var sb = JobStreamBuilder.apply(monitors, s);
+            return run.apply(s, p, c, sb);
+         });
       }
 
       public JobSettingsConfiguration<P, C> run(Function3<String, P, C, C> run) {
@@ -115,17 +133,18 @@ public final class JobDefinitions {
 
       private final Function3<String, P, C, CompletionStage<JobHandle<C>>> run;
 
-      private List<ScheduleExecution<P>> scheduleExecutions;
+      private final CombinedJobMonitor<P, C> monitors;
 
-      private CombinedJobMonitor<P, C> monitors;
+      private List<ScheduleExecution<P>> scheduleExecutions;
 
       private Logger logger;
 
       public static <P, C> JobSettingsConfiguration<P, C> apply(
-         Name name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes, Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
+         Name name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
+         Function3<String, P, C, CompletionStage<JobHandle<C>>> run, CombinedJobMonitor<P, C> monitors) {
 
          var logger = LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name.getValue())); // TODO: Name to snake case
-         return apply(name, runtimeConfiguration, jobTypes, run, Lists.newArrayList(), CombinedJobMonitor.apply(), logger);
+         return apply(name, runtimeConfiguration, jobTypes, run, monitors, Lists.newArrayList(), logger);
       }
 
       public JobDefinition<P, C> build() {

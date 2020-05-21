@@ -1,5 +1,7 @@
 package alpakkeer.core.jobs.monitor;
 
+import alpakkeer.core.stream.CheckpointMonitor;
+import alpakkeer.core.stream.LatencyMonitor;
 import alpakkeer.core.util.ObjectMapperFactory;
 import alpakkeer.core.util.Operators;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,6 +65,16 @@ public final class LoggingJobMonitor<P, C> implements JobMonitor<P, C> {
    @Override
    public void onCompleted(String executionId) {
       Log.info("Execution `{}` of job `{}` finished successfully", executionId, name);
+   }
+
+   @Override
+   public void onStats(String executionId, String name, CheckpointMonitor.Stats statistics) {
+      Log.info("{} / {} / {}", executionId, name, statistics);
+   }
+
+   @Override
+   public void onStats(String executionId, String name, LatencyMonitor.Stats statistics) {
+      Log.info("{} / {} / {}", executionId, name, statistics);
    }
 
    @Override

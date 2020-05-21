@@ -145,7 +145,7 @@ object CheckpointMonitor {
    * @tparam A the type of the elements passing through this stage
    * @return a `ThroughputMonitor` stage.
    */
-  def apply[A]: CheckpointMonitor[A] =
+  private def apply[A]: CheckpointMonitor[A] =
     new CheckpointMonitor[A]
 
   /**
@@ -156,14 +156,14 @@ object CheckpointMonitor {
    * @tparam Mat the value materialized by `statsSink`
    * @return a `Flow` that outputs all its inputs and emits throughput stats to `statsSink`.
    */
-  def apply[A, Mat](statsSink: Sink[Stats, Mat]): Graph[FlowShape[A, A], Mat] = {
-    GraphDSL.create(statsSink) { implicit b =>
+  def apply[A, Mat](statsSink: Sink[Stats, Mat]): Flow[A, A, Mat] = {
+    Flow.fromGraph(GraphDSL.create(statsSink) { implicit b =>
       sink =>
         import GraphDSL.Implicits._
         val mon = b.add(apply[A])
         mon.out1 ~> sink
         FlowShape(mon.in, mon.out0)
-    }
+    })
   }
 
   /**
@@ -174,7 +174,7 @@ object CheckpointMonitor {
    * @tparam A the type of the elements passing through this stage
    * @return a `Flow` that outputs all its inputs and calls `onStats` frequently with throughput stats.
    */
-  def apply[A](statsInterval: FiniteDuration, onStats: Stats => Unit): Graph[FlowShape[A, A], NotUsed] =
+  def apply[A](statsInterval: FiniteDuration, onStats: Stats => Unit): Flow[A, A, NotUsed] =
     apply(Flow.fromGraph(new Pulse[Stats](statsInterval)).to(Sink.foreach(onStats)).mapMaterializedValue(_ => NotUsed))
 
 }

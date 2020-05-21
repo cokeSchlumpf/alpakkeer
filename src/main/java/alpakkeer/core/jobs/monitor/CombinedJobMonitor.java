@@ -1,5 +1,7 @@
 package alpakkeer.core.jobs.monitor;
 
+import alpakkeer.core.stream.CheckpointMonitor;
+import alpakkeer.core.stream.LatencyMonitor;
 import alpakkeer.core.util.Operators;
 import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
@@ -46,6 +48,16 @@ public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
    @Override
    public void onCompleted(String executionId) {
       monitors.forEach(m -> m.onCompleted(executionId));
+   }
+
+   @Override
+   public void onStats(String executionId, String name, CheckpointMonitor.Stats statistics) {
+      monitors.forEach(m -> m.onStats(executionId, name, statistics));
+   }
+
+   @Override
+   public void onStats(String executionId, String name, LatencyMonitor.Stats statistics) {
+      monitors.forEach(m -> m.onStats(executionId, name, statistics));
    }
 
    @Override

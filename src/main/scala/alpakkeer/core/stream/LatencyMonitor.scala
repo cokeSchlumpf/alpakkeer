@@ -63,7 +63,7 @@ final class LatencyMonitor[A](ctx: TimerContext) extends GraphStage[FanOutShape2
     setHandler(statsOut, new OutHandler {
       def onPull(): Unit = pushStats()
 
-      override def onDownstreamFinish(): Unit = {}
+      override def onDownstreamFinish(cause: Throwable): Unit = {}
     })
   }
 }
@@ -141,14 +141,14 @@ object LatencyMonitor {
    */
   def apply[A, B, Mat, Mat2, Mat3](
     flow: Flow[A, B, Mat],
-    statsSink: Sink[Stats, Mat2])(combineMat: (Mat, Mat2) => Mat3): Graph[FlowShape[A, B], Mat3] = {
+    statsSink: Sink[Stats, Mat2])(combineMat: (Mat, Mat2) => Mat3): Flow[A, B, Mat3] = {
 
-    GraphDSL.create(apply(flow), statsSink)(combineMat) { implicit b =>
+    Flow.fromGraph(GraphDSL.create(apply(flow), statsSink)(combineMat) { implicit b =>
       (mon, sink) =>
         import GraphDSL.Implicits._
         mon.out1 ~> sink
         FlowShape(mon.in, mon.out0)
-    }
+    })
   }
 
   /**
@@ -162,7 +162,7 @@ object LatencyMonitor {
    * @tparam Mat the materialized value of `flow`
    * @return a `Flow` that passes all elements through `flow` and calls `onStats` frequently with latency stats.
    */
-  def apply[A, B, Mat](flow: Flow[A, B, Mat], statsInterval: FiniteDuration, onStats: Stats => Unit): Graph[FlowShape[A, B], Mat] =
+  def apply[A, B, Mat](flow: Flow[A, B, Mat], statsInterval: FiniteDuration, onStats: Stats => Unit): Flow[A, B, Mat] =
     apply(flow, Flow.fromGraph(new Pulse[Stats](statsInterval)).to(Sink.foreach(onStats)))(Keep.left)
 
 }

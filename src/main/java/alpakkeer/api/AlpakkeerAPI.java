@@ -19,6 +19,7 @@ public final class AlpakkeerAPI {
 
       var jobs = new JobsResource(resources, om);
       var admin = new AdminResource(config, scheduler);
+      var grafana = new GrafanaResource(om);
 
       JavalinJackson.configure(om);
 
@@ -26,6 +27,7 @@ public final class AlpakkeerAPI {
          .create(cfg -> {
             cfg.showJavalinBanner = false;
             cfg.registerPlugin(AlpakkeerOpenApi.apply(config));
+            cfg.enableCorsForAllOrigins();
          })
 
          // Jobs
@@ -37,6 +39,16 @@ public final class AlpakkeerAPI {
          // Admin
          .get("/api/v1/about", admin.getAbout())
          .get("/api/v1/admin/crontab", admin.getJobs())
+
+         // Grafana
+         .get("/grafana", grafana.getHealth())
+         .post("/grafana/search", grafana.search())
+         .post("/grafana/query", grafana.query())
+         .post("/grafana/annotations", grafana.getAnnotations())
+         .head("/grafana/annotations", grafana.getAnnotationsHeader())
+         .get("/grafana/tag-keys", grafana.getTagKeys())
+         .post("/grafana/tag-keys", grafana.getTagKeys())
+         .post("/grafana/tag-values", grafana.getTagValues())
 
          // run ...
          .start(config.getApi().getHostname(), config.getApi().getPort());

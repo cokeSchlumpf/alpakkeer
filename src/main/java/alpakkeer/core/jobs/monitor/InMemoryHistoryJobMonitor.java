@@ -1,10 +1,13 @@
 package alpakkeer.core.jobs.monitor;
 
+import alpakkeer.core.stream.CheckpointMonitor;
+import alpakkeer.core.stream.LatencyMonitor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.Maps;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -13,6 +16,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -26,12 +30,14 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C> {
 
    ObjectMapper om;
 
+   int statsLimit;
+
    ConcurrentHashMap<String, Running<P>> runningExecutions;
 
    EvictingQueue<Executed<P, C>> history;
 
    public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(int limit, ObjectMapper om) {
-      return apply(limit, om, new ConcurrentHashMap<>(), EvictingQueue.create(limit));
+      return apply(limit, om, 42, new ConcurrentHashMap<>(), EvictingQueue.create(limit));
    }
 
    @Value
@@ -44,6 +50,10 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C> {
       P properties;
 
       LocalDateTime started;
+
+      Map<String, EvictingQueue<CheckpointMonitor.Stats>> checkpoints;
+
+      Map<String, EvictingQueue<LatencyMonitor.Stats>> stages;
 
    }
 
@@ -104,7 +114,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C> {
 
    @Override
    public void onTriggered(String executionId, P properties) {
-      var exec = Running.apply(System.nanoTime(), properties, LocalDateTime.now());
+      var exec = Running.apply(System.nanoTime(), properties, LocalDateTime.now(), Maps.newHashMap(), Maps.newHashMap());
       runningExecutions.put(executionId, exec);
    }
 
@@ -126,6 +136,36 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C> {
    @Override
    public void onCompleted(String executionId) {
       addToHistory(executionId, JobResult.COMPLETED, null, null);
+   }
+
+   @Override
+   public void onStats(String executionId, String name, CheckpointMonitor.Stats statistics) {
+      if (runningExecutions.containsKey(executionId)) {
+         var running = runningExecutions.get(executionId);
+
+         if (running.getCheckpoints().containsKey(name)) {
+            running.getCheckpoints().get(name).add(statistics);
+         } else {
+            var queue = EvictingQueue.<CheckpointMonitor.Stats>create(statsLimit);
+            queue.add(statistics);
+            running.getCheckpoints().put(name, queue);
+         }
+      }
+   }
+
+   @Override
+   public void onStats(String executionId, String name, LatencyMonitor.Stats statistics) {
+      if (runningExecutions.containsKey(executionId)) {
+         var running = runningExecutions.get(executionId);
+
+         if (running.getStages().containsKey(name)) {
+            running.getStages().get(name).add(statistics);
+         } else {
+            var queue = EvictingQueue.<LatencyMonitor.Stats>create(statsLimit);
+            queue.add(statistics);
+            running.getStages().put(name, queue);
+         }
+      }
    }
 
    @Override

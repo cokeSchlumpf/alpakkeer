@@ -1,5 +1,7 @@
 package alpakkeer.core.jobs.monitor;
 
+import alpakkeer.core.stream.CheckpointMonitor;
+import alpakkeer.core.stream.LatencyMonitor;
 import com.google.common.collect.Maps;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
@@ -86,6 +88,16 @@ public final class PrometheusJobMonitor<P, C> implements JobMonitor<P, C> {
          jobDurations.observe(seconds);
          jobDuration.set(seconds);
       }
+   }
+
+   @Override
+   public void onStats(String executionId, String name, CheckpointMonitor.Stats statistics) {
+      // TODO: Implement Prometheus Metrics
+   }
+
+   @Override
+   public void onStats(String executionId, String name, LatencyMonitor.Stats statistics) {
+      // TODO: Implement Prometheus Metrics
    }
 
    @Override

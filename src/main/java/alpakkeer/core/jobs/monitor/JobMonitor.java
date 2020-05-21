@@ -1,5 +1,8 @@
 package alpakkeer.core.jobs.monitor;
 
+import alpakkeer.core.stream.CheckpointMonitor;
+import alpakkeer.core.stream.LatencyMonitor;
+
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -14,6 +17,10 @@ public interface JobMonitor<P, C> {
    void onCompleted(String executionId, C result);
 
    void onCompleted(String executionId);
+
+   void onStats(String executionId, String name, CheckpointMonitor.Stats statistics);
+
+   void onStats(String executionId, String name, LatencyMonitor.Stats statistics);
 
    void onStopped(String executionId, C result);
 

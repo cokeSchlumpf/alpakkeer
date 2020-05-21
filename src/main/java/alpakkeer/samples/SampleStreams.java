@@ -1,7 +1,6 @@
 package alpakkeer.samples;
 
 import akka.Done;
-import akka.NotUsed;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.RunnableGraph;
 import akka.stream.javadsl.Sink;
