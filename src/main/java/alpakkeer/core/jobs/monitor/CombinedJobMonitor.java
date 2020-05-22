@@ -1,5 +1,7 @@
 package alpakkeer.core.jobs.monitor;
 
+import alpakkeer.core.monitoring.MetricsMonitor;
+import alpakkeer.core.monitoring.MetricsMonitors;
 import alpakkeer.core.stream.CheckpointMonitor;
 import alpakkeer.core.stream.LatencyMonitor;
 import alpakkeer.core.util.Operators;
@@ -23,6 +25,20 @@ public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
    public CombinedJobMonitor<P, C> withMonitor(JobMonitor<P, C> monitor) {
       this.monitors.add(monitor);
       return this;
+   }
+
+   public List<JobMonitor<P, C>> getMonitors() {
+      return List.copyOf(monitors);
+   }
+
+   public MetricsMonitors getMetricsMonitors() {
+      var mons = monitors
+         .stream()
+         .filter(m -> m instanceof MetricsMonitor)
+         .map(m -> (MetricsMonitor) m)
+         .collect(Collectors.toList());
+
+      return MetricsMonitors.apply(mons);
    }
 
    @Override

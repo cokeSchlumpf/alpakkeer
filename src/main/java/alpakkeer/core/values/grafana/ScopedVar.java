@@ -14,4 +14,6 @@ public class ScopedVar {
 
    String value;
 
+   boolean selected;
+
 }

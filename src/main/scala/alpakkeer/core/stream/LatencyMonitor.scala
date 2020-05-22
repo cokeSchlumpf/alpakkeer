@@ -1,13 +1,12 @@
 package alpakkeer.core.stream
 
+import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.concurrent.duration.FiniteDuration
-
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.stream.stage._
-
 import LatencyMonitor._
 
 /**
@@ -44,7 +43,7 @@ final class LatencyMonitor[A](ctx: TimerContext) extends GraphStage[FanOutShape2
     def pushStats(): Unit = {
       val startTime = lastStatsPull
       val endTime = System.nanoTime()
-      push(statsOut, Stats((endTime - startTime) / 1000000, count, sumLatency))
+      push(statsOut, Stats(Instant.now(), (endTime - startTime) / 1000000, count, sumLatency))
       lastStatsPull = endTime
       count = 0L
       sumLatency = 0L
@@ -85,7 +84,7 @@ object LatencyMonitor {
    * @param count       the number of elements that passed through the flow
    * @param sumLatency  the sum of the latencies of all the elements that passed through the flow, in milliseconds
    */
-  case class Stats(timeElapsed: Long, count: Long, sumLatency: Long) {
+  case class Stats(moment: Instant, timeElapsed: Long, count: Long, sumLatency: Long) {
 
     /**
      * The average latency of the elements that passed through the flow, in milliseconds

@@ -159,7 +159,8 @@ public final class JobDefinitions {
       }
 
       public JobSettingsConfiguration<P, C> withHistoryMonitor(int limit) {
-         return withMonitor(InMemoryHistoryJobMonitor.apply(limit, runtimeConfiguration.getObjectMapper()));
+         // TODO pass actor system
+         return withMonitor(InMemoryHistoryJobMonitor.apply(limit, runtimeConfiguration.getObjectMapper(), null, List.of(), List.of()));
       }
 
       public JobSettingsConfiguration<P, C> withLoggingMonitor() {

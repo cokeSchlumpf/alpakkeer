@@ -1,9 +1,6 @@
 package alpakkeer.core.util;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 
 public interface DateTime {
 
@@ -26,5 +23,13 @@ public interface DateTime {
    ZonedDateTime toZonedDateTime();
 
    ZonedDateTime toZonedDateTime(ZoneId zone);
+
+   default Instant toInstant() {
+      return toZonedDateTime().toInstant();
+   }
+
+   default Instant toInstant(ZoneId zone) {
+      return toZonedDateTime(zone).toInstant();
+   }
 
 }

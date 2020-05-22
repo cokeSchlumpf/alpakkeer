@@ -20,6 +20,7 @@ public final class AlpakkeerAPI {
       var jobs = new JobsResource(resources, om);
       var admin = new AdminResource(config, scheduler);
       var grafana = new GrafanaResource(om);
+      var metrics = new MetricsResource(resources);
 
       JavalinJackson.configure(om);
 
@@ -36,11 +37,18 @@ public final class AlpakkeerAPI {
          .options("/api/v1/jobs/:name", jobs.getTriggerJobExample())
          .post("/api/v1/jobs/:name", jobs.triggerJob())
 
+         // Metrics
+         .get("/api/v1/metrics", metrics.getHealth())
+         .post("/api/v1/metrics/search", metrics.search())
+         .post("/api/v1/metrics/query", metrics.query())
+         .get("/api/v1/metrics/annotations", metrics.searchAnnotations())
+         .post("/api/v1/metrics/annotations", metrics.queryAnnotations())
+
          // Admin
          .get("/api/v1/about", admin.getAbout())
          .get("/api/v1/admin/crontab", admin.getJobs())
 
-         // Grafana
+         // Grafana Test endpoints
          .get("/grafana", grafana.getHealth())
          .post("/grafana/search", grafana.search())
          .post("/grafana/query", grafana.query())

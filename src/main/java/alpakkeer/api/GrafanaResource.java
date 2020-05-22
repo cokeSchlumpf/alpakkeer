@@ -41,11 +41,6 @@ public final class GrafanaResource {
                to.minus(Duration.ofMinutes(5)).toEpochMillis(),
                to.minus(Duration.ofMinutes(4)).toEpochMillis())));
       });
-
-      /*
-      1590043204108
-      1590035944000
-       */
    }
 
    public Handler getAnnotationsHeader() {
@@ -118,6 +113,7 @@ public final class GrafanaResource {
          .jsonArray("200", SearchResponseItem.class);
 
       return OpenApiBuilder.documented(docs, ctx -> {
+
          ctx.json(List.of(
             SearchResponseItem.apply("foo", 1),
             SearchResponseItem.apply("bar", 2)));
@@ -139,12 +135,12 @@ public final class GrafanaResource {
          var request = ctx.bodyAsClass(QueryRequest.class);
          var result = List.of(
             TimeSeries.apply(
-               "foo", List.of(
+               "A", List.of(
                   DataPoint.apply(request.getStartTime(), 2.0),
                   DataPoint.apply(request.getStartTime() - 1000 * 60, 1.5),
                   DataPoint.apply(request.getStartTime() - 1000 * 60 * 2, 2.3))),
             TimeSeries.apply(
-               "bar", List.of(
+               "B", List.of(
                   DataPoint.apply(request.getStartTime(), 2.0),
                   DataPoint.apply(request.getStartTime() - 1000 * 60 * 3, 2.7))));
 

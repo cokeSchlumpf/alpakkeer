@@ -6,20 +6,19 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Value;
 
-import java.util.List;
-import java.util.Map;
-
 @Value
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
 @AllArgsConstructor(staticName = "apply")
-public class AnnotationRequest {
+public class AnnotationQuery {
 
-   Range range;
+   String query;
 
-   RangeRaw rangeRaw;
+   String name;
 
-   AnnotationQuery annotation;
+   String datasource;
 
-   Map<String, ScopedVar> variables;
+   boolean enable;
+
+   String iconColor;
 
 }

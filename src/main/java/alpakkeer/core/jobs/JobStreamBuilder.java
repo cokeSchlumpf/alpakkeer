@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
 import java.time.Duration;
 
 @AllArgsConstructor(staticName = "apply")
-public class JobStreamBuilder<P, C> implements StreamBuilder {
+public final class JobStreamBuilder<P, C> implements StreamBuilder {
 
    private final JobMonitor<P, C> monitor;
 

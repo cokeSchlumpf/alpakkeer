@@ -1,5 +1,7 @@
 package alpakkeer.core.stream
 
+import java.time.Instant
+
 import akka.NotUsed
 import akka.stream._
 import akka.stream.scaladsl._
@@ -49,6 +51,7 @@ final class CheckpointMonitor[A] extends GraphStage[FanOutShape2[A, A, Stats]] {
       val startTime = lastStatsPull
       val endTime = System.nanoTime()
       push(statsOut, Stats(
+        Instant.now(),
         endTime - startTime, elementsSinceLastPull,
         totalPushPullLatencySinceLastStatsPull, totalPullPushLatencySinceLastStatsPull))
 
@@ -93,7 +96,12 @@ object CheckpointMonitor {
    * @param timeElapsedNanos the time elapsed between the measurement start and its end, in nanoseconds
    * @param count            the number of elements that passed through the stream
    */
-  case class Stats(timeElapsedNanos: Long, count: Long, totalPushPullLatencyNanos: Long, totalPullPushLatencyNanos: Long) {
+  case class Stats(
+    moment: Instant,
+    timeElapsedNanos: Long,
+    count: Long,
+    totalPushPullLatencyNanos: Long,
+    totalPullPushLatencyNanos: Long) {
 
     /**
      * The number of elements that passed through the stream per second.

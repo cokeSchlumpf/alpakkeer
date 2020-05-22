@@ -26,12 +26,10 @@ public class Application {
          .create()
          .withJob(builder -> builder
             .create("sample-job", MyProperties.apply("hello"), LocalDateTime.now())
-            .runGraph((id, props, context, sb) -> {
-               return SampleStreams.twitter(sb).mapMaterializedValue(i -> i.thenApply(d -> LocalDateTime.now()));
-            })
+            .runGraph((id, props, context, sb) -> SampleStreams.twitter(sb).mapMaterializedValue(i -> i.thenApply(d -> LocalDateTime.now())))
             .withHistoryMonitor(3)
             .withLoggingMonitor()
-            .withScheduledExecution(CronExpression.everyMinute())
+            .withScheduledExecution(CronExpression.everyHours(1))
             .build())
          .start();
 
