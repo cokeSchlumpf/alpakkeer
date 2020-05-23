@@ -29,8 +29,7 @@ public class Application {
             .runGraph((id, props, context, sb) -> SampleStreams
                .twitter(sb)
                .mapMaterializedValue(i -> i.thenApply(d -> LocalDateTime.now())))
-            .withHistoryMonitor(3)
-            .withLoggingMonitor()
+            .withHistoryMonitor(100)
             .withScheduledExecution(CronExpression.everyMinute())
             .build())
          .start();

@@ -283,7 +283,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var checkpointCounts = checkpoints
          .stream()
          .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "count",
+            Strings.convert(cp).toSnakeCase() + "__count",
             "number of elements processed within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
                .map(s -> DataPoint.apply(s.moment(), s.count()))
@@ -294,7 +294,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var checkpointThroughput = checkpoints
          .stream()
          .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "throughput_elements_per_second",
+            Strings.convert(cp).toSnakeCase() + "__throughput_elements_per_second",
             "number of elements processed within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
                .map(s -> DataPoint.apply(s.moment(), s.throughputElementsPerSecond()))
@@ -305,7 +305,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var checkpointPullPushLatency = checkpoints
          .stream()
          .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "pull_push_latency_ns",
+            Strings.convert(cp).toSnakeCase() + "__pull_push_latency_ns",
             "pull-push latency within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
                .map(s -> DataPoint.apply(s.moment(), s.pullPushLatencyNanos()))
@@ -316,7 +316,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var checkpointPushPullLatency = checkpoints
          .stream()
          .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "push_pull_latency_ns",
+            Strings.convert(cp).toSnakeCase() + "__push_pull_latency_ns",
             "push-pull latency within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
                .map(s -> DataPoint.apply(s.moment(), s.pushPullLatencyNanos()))
@@ -327,7 +327,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var stageLatency = stages
          .stream()
          .map(st -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(st).toSnakeCase() + "__" + "latency_ms",
+            Strings.convert(st).toSnakeCase() + "__latency_ms",
             "The average latency in ms of the stage for the measured interval.",
             () -> getLatencyMonitorEvents(st, history, runningExecutions)
                .map(s -> DataPoint.apply(s.moment(), s.avgLatency()))
@@ -338,7 +338,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var stageCount = stages
          .stream()
          .map(st -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(st).toSnakeCase() + "__" + "count",
+            Strings.convert(st).toSnakeCase() + "__count",
             "The number of processed elements within the interval.",
             () -> getLatencyMonitorEvents(st, history, runningExecutions)
                .map(s -> DataPoint.apply(s.moment(), s.avgLatency()))

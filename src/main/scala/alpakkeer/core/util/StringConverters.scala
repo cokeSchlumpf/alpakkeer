@@ -27,7 +27,11 @@ object StringConverters {
     }
 
     implicit def toSnakeCase: String = {
-      "([a-z0-9])([A-Z])".r.replaceAllIn(toCamelCase, m => m.group(1) + "_" + m.group(2).toLowerCase)
+      if (s.matches("^[a-z0-9_]+$")) {
+        s
+      } else {
+        "([a-z0-9])([A-Z])".r.replaceAllIn(toCamelCase, m => m.group(1) + "_" + m.group(2).toLowerCase)
+      }
     }
 
   }

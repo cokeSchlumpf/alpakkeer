@@ -159,7 +159,8 @@ public final class JobDefinitions {
 
       public JobSettingsConfiguration<P, C> withHistoryMonitor(int limit) {
          return withMonitor(InMemoryHistoryJobMonitor.apply(
-            limit, runtimeConfiguration.getObjectMapper(),
+            limit,
+            runtimeConfiguration.getObjectMapper(),
             runtimeConfiguration.getSystem()));
       }
 
