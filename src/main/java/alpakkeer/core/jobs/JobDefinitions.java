@@ -1,6 +1,5 @@
 package alpakkeer.core.jobs;
 
-import akka.actor.ActorSystem;
 import akka.japi.function.Function2;
 import akka.japi.function.Function3;
 import akka.japi.function.Function4;
@@ -12,6 +11,7 @@ import alpakkeer.core.jobs.monitor.*;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
+import alpakkeer.core.util.Strings;
 import alpakkeer.core.values.Name;
 import alpakkeer.core.values.Nothing;
 import com.google.common.collect.ImmutableList;
@@ -29,8 +29,6 @@ import java.util.function.Function;
 
 @AllArgsConstructor(staticName = "apply")
 public final class JobDefinitions {
-
-   private CompletionStage<ActorSystem> system;
 
    private RuntimeConfiguration runtimeConfiguration;
 
@@ -62,17 +60,15 @@ public final class JobDefinitions {
 
       private final RuntimeConfiguration runtimeConfiguration;
 
-      private final CompletionStage<ActorSystem> system;
-
       private final JobTypeConfiguration<P, C> jobTypes;
 
       private final CombinedJobMonitor<P, C> monitors;
 
       public static <P, C> JobRunnableConfiguration<P, C> apply(
-         Name name, RuntimeConfiguration runtimeConfiguration, CompletionStage<ActorSystem> system,
+         Name name, RuntimeConfiguration runtimeConfiguration,
          JobTypeConfiguration<P, C> jobTypes) {
 
-         return apply(name, runtimeConfiguration, system, jobTypes, CombinedJobMonitor.apply());
+         return apply(name, runtimeConfiguration, jobTypes, CombinedJobMonitor.apply());
       }
 
       public JobSettingsConfiguration<P, C> runCancelableCS(Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
@@ -88,7 +84,7 @@ public final class JobDefinitions {
       }
 
       public JobSettingsConfiguration<P, C> runGraph(Function3<String, P, C, RunnableGraph<CompletionStage<C>>> run) {
-         return runCS((s, p, c) -> system.thenCompose(sys -> Operators.suppressExceptions(() -> run.apply(s, p, c)).run(sys)));
+         return runCS((s, p, c) -> Operators.suppressExceptions(() -> run.apply(s, p, c)).run(runtimeConfiguration.getSystem()));
       }
 
       public JobSettingsConfiguration<P, C> runGraph(Function4<String, P, C, StreamBuilder, RunnableGraph<CompletionStage<C>>> run) {
@@ -143,7 +139,10 @@ public final class JobDefinitions {
          Name name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
          Function3<String, P, C, CompletionStage<JobHandle<C>>> run, CombinedJobMonitor<P, C> monitors) {
 
-         var logger = LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name.getValue())); // TODO: Name to snake case
+         var logger = LoggerFactory.getLogger(String.format(
+            "alpakkeer.jobs.%s",
+            Strings.convert(name.getValue()).toSnakeCase()));
+
          return apply(name, runtimeConfiguration, jobTypes, run, monitors, Lists.newArrayList(), logger);
       }
 
@@ -159,8 +158,9 @@ public final class JobDefinitions {
       }
 
       public JobSettingsConfiguration<P, C> withHistoryMonitor(int limit) {
-         // TODO pass actor system
-         return withMonitor(InMemoryHistoryJobMonitor.apply(limit, runtimeConfiguration.getObjectMapper(), null, List.of(), List.of()));
+         return withMonitor(InMemoryHistoryJobMonitor.apply(
+            limit, runtimeConfiguration.getObjectMapper(),
+            runtimeConfiguration.getSystem()));
       }
 
       public JobSettingsConfiguration<P, C> withLoggingMonitor() {
@@ -251,7 +251,7 @@ public final class JobDefinitions {
    }
 
    public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Nothing>, JobTypeConfiguration<P, C>> cfg) {
-      return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, system, cfg.apply(JobTypeConfiguration.apply()));
+      return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
    }
 
    public <P, C> JobRunnableConfiguration<P, C> create(String name, P defaultProperties, C initialContext) {

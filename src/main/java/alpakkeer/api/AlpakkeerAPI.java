@@ -43,6 +43,7 @@ public final class AlpakkeerAPI {
          .post("/api/v1/metrics/query", metrics.query())
          .get("/api/v1/metrics/annotations", metrics.searchAnnotations())
          .post("/api/v1/metrics/annotations", metrics.queryAnnotations())
+         .head("/api/v1/metrics/annotations", grafana.getAnnotationsHeader())
 
          // Admin
          .get("/api/v1/about", admin.getAbout())

@@ -26,15 +26,16 @@ public class Application {
          .create()
          .withJob(builder -> builder
             .create("sample-job", MyProperties.apply("hello"), LocalDateTime.now())
-            .runGraph((id, props, context, sb) -> SampleStreams.twitter(sb).mapMaterializedValue(i -> i.thenApply(d -> LocalDateTime.now())))
+            .runGraph((id, props, context, sb) -> SampleStreams
+               .twitter(sb)
+               .mapMaterializedValue(i -> i.thenApply(d -> LocalDateTime.now())))
             .withHistoryMonitor(3)
             .withLoggingMonitor()
-            .withScheduledExecution(CronExpression.everyHours(1))
+            .withScheduledExecution(CronExpression.everyMinute())
             .build())
          .start();
 
       Operators.suppressExceptions(() -> Thread.sleep(Duration.ofMinutes(300).toMillis()));
-
       alpakkeer.stop();
    }
 

@@ -35,10 +35,11 @@ public final class MetricsResource {
             op.description("Returns HTTP 200 for Grafana's `Test connection` call.");
             op.addTagsItem("Metrics");
          })
-         .result("200");
+         .jsonArray("200", String.class);
 
       return OpenApiBuilder.documented(docs, ctx -> {
-         ctx.status(200);
+         var metrics = getTimeSeriesMetrics();
+         ctx.json(metrics.keySet());
       });
    }
 

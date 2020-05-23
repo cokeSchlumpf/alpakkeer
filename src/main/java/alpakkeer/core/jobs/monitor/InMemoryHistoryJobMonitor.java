@@ -4,7 +4,6 @@ import akka.actor.ActorSystem;
 import alpakkeer.core.monitoring.*;
 import alpakkeer.core.stream.CheckpointMonitor;
 import alpakkeer.core.stream.LatencyMonitor;
-import alpakkeer.core.util.DateTimes;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,19 +13,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,30 +31,20 @@ import java.util.stream.Stream;
 @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
 public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, MetricsMonitor {
 
-   private static final Logger LOG = LoggerFactory.getLogger(InMemoryHistoryJobMonitor.class);
-
    int statsLimit;
 
    ObjectMapper om;
 
-   List<String> checkpoints;
-
-   List<String> stages;
+   ActorSystem system;
 
    ConcurrentHashMap<String, Running<P>> runningExecutions;
 
    EvictingQueue<Executed<P, C>> history;
 
-   Metric<List<Marker>> runsSuccessful;
-
-   Metric<List<Marker>> runsFailed;
-
-   Metric<List<Marker>> runsStopped;
-
-   List<Metric<TimeSeries>> stats;
+   List<Metric<List<Marker>>> markers;
 
    public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(
-      int limit, int statsLimit, ObjectMapper om, ActorSystem system, List<String> checkpoints, List<String> stages) {
+      int limit, int statsLimit, ObjectMapper om, ActorSystem system) {
 
       var history = EvictingQueue.<Executed<P, C>>create(limit);
       var running = new ConcurrentHashMap<String, Running<P>>();
@@ -70,11 +55,11 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
          (from, to) -> history
             .stream()
             .filter(e -> e.getExited().equals(JobResult.COMPLETED))
-            .filter(e -> DateTimes.ofLocalDateTime(e.getStarted()).toEpochMillis() >= from.toEpochMilli())
-            .filter(e -> DateTimes.ofLocalDateTime(e.getFinished()).toEpochMillis() <= to.toEpochMilli())
+            .filter(e -> e.getStarted().toEpochMilli() >= from.toEpochMilli())
+            .filter(e -> e.getFinished().toEpochMilli() <= to.toEpochMilli())
             .map(e -> {
-               var f = DateTimes.ofLocalDateTime(e.getStarted()).toInstant();
-               var t = DateTimes.ofLocalDateTime(e.getFinished()).toInstant();
+               var f = e.getStarted();
+               var t = e.getFinished();
                var result = Operators.ignoreExceptionsWithDefault(() -> om.writeValueAsString(e.getResult()), String.valueOf(e.getResult()));
 
                return Marker.apply(e.getExecutionId(), result, f, t);
@@ -87,11 +72,11 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
          (from, to) -> history
             .stream()
             .filter(e -> e.getExited().equals(JobResult.FAILED))
-            .filter(e -> DateTimes.ofLocalDateTime(e.getStarted()).toEpochMillis() >= from.toEpochMilli())
-            .filter(e -> DateTimes.ofLocalDateTime(e.getFinished()).toEpochMillis() <= to.toEpochMilli())
+            .filter(e -> e.getStarted().toEpochMilli() >= from.toEpochMilli())
+            .filter(e -> e.getFinished().toEpochMilli() <= to.toEpochMilli())
             .map(e -> {
-               var f = DateTimes.ofLocalDateTime(e.getStarted()).toInstant();
-               var t = DateTimes.ofLocalDateTime(e.getFinished()).toInstant();
+               var f = e.getStarted();
+               var t = e.getFinished();
 
                return Marker.apply(e.getExecutionId(), e.getException(), f, t);
             })
@@ -103,82 +88,70 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
          (from, to) -> history
             .stream()
             .filter(e -> e.getExited().equals(JobResult.STOPPED))
-            .filter(e -> DateTimes.ofLocalDateTime(e.getStarted()).toEpochMillis() >= from.toEpochMilli())
-            .filter(e -> DateTimes.ofLocalDateTime(e.getFinished()).toEpochMillis() <= to.toEpochMilli())
+            .filter(e -> e.getStarted().toEpochMilli() >= from.toEpochMilli())
+            .filter(e -> e.getFinished().toEpochMilli() <= to.toEpochMilli())
             .map(e -> {
-               var f = DateTimes.ofLocalDateTime(e.getStarted()).toInstant();
-               var t = DateTimes.ofLocalDateTime(e.getFinished()).toInstant();
+               var f = e.getStarted();
+               var t = e.getFinished();
 
                return Marker.apply(e.getExecutionId(), f, t);
             })
             .collect(Collectors.toList()));
 
-      var checkpointCounts = checkpoints
-         .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "count",
-            "number of elements processed within interval",
-            () -> getCheckpointMonitorEvents(cp, history, running)
-               .map(s -> DataPoint.apply(s.moment(), s.count()))
-               .collect(Collectors.toList()),
-            system))
-         .collect(Collectors.toList());
-
-      var checkpointThroughput = checkpoints
-         .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "throughput_elements_per_second",
-            "number of elements processed within interval",
-            () -> getCheckpointMonitorEvents(cp, history, running)
-               .map(s -> DataPoint.apply(s.moment(), s.throughputElementsPerSecond()))
-               .collect(Collectors.toList()),
-            system))
-         .collect(Collectors.toList());
-
-      var checkpointPullPushLatency = checkpoints
-         .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "pull_push_latency_ns",
-            "pull-push latency within interval",
-            () -> getCheckpointMonitorEvents(cp, history, running)
-               .map(s -> DataPoint.apply(s.moment(), s.pullPushLatencyNanos()))
-               .collect(Collectors.toList()),
-            system))
-         .collect(Collectors.toList());
-
-      var checkpointPushPullLatency = checkpoints
-         .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
-            Strings.convert(cp).toSnakeCase() + "__" + "push_pull_latency_ns",
-            "push-pull latency within interval",
-            () -> getCheckpointMonitorEvents(cp, history, running)
-               .map(s -> DataPoint.apply(s.moment(), s.pushPullLatencyNanos()))
-               .collect(Collectors.toList()),
-            system))
-         .collect(Collectors.toList());
-
-      var stats = Lists.<Metric<TimeSeries>>newArrayList();
-      stats.addAll(checkpointCounts);
-      stats.addAll(checkpointThroughput);
-      stats.addAll(checkpointPullPushLatency);
-      stats.addAll(checkpointPushPullLatency);
-
-
       return apply(
-         statsLimit, om, List.copyOf(checkpoints), List.copyOf(stages), running, history,
-         runsSuccessful, runsFailed, runsStopped, List.copyOf(stats));
+         statsLimit, om, system, running, history, List.of(runsSuccessful, runsFailed, runsStopped));
    }
 
-   public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(int limit, ObjectMapper om, ActorSystem system, List<String> checkpoints, List<String> stages) {
-      return apply(limit, 10_000, om, system, checkpoints, stages);
-   }
-
-   public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(ObjectMapper om, ActorSystem system, List<String> checkpoints, List<String> stages) {
-      return apply(100, om, system, checkpoints, stages);
+   public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(int limit, ObjectMapper om, ActorSystem system) {
+      return apply(limit, 10_000, om, system);
    }
 
    public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(ObjectMapper om, ActorSystem system) {
-      return apply(100, om, system, List.of(), List.of());
+      return apply(100, om, system);
+   }
+
+   private static <P, C> Set<String> getCheckpoints(
+      EvictingQueue<Executed<P, C>> history,
+      ConcurrentHashMap<String, Running<P>> runningExecutions) {
+
+      var historic = history
+         .stream()
+         .flatMap(e -> e.getCheckpoints().keySet().stream())
+         .collect(Collectors.toSet());
+
+      var current = runningExecutions
+         .values()
+         .stream()
+         .flatMap(r -> r.getCheckpoints().keySet().stream())
+         .collect(Collectors.toSet());
+
+      var result = Sets.<String>newHashSet();
+      result.addAll(historic);
+      result.addAll(current);
+
+      return result;
+   }
+
+   private static <P, C> Set<String> getStages(
+      EvictingQueue<Executed<P, C>> history,
+      ConcurrentHashMap<String, Running<P>> runningExecutions) {
+
+      var historic = history
+         .stream()
+         .flatMap(e -> e.getStages().keySet().stream())
+         .collect(Collectors.toSet());
+
+      var current = runningExecutions
+         .values()
+         .stream()
+         .flatMap(r -> r.getStages().keySet().stream())
+         .collect(Collectors.toSet());
+
+      var result = Sets.<String>newHashSet();
+      result.addAll(historic);
+      result.addAll(current);
+
+      return result;
    }
 
    private static <P, C> Stream<CheckpointMonitor.Stats> getCheckpointMonitorEvents(
@@ -228,7 +201,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
       P properties;
 
-      LocalDateTime started;
+      Instant started;
 
       Map<String, EvictingQueue<CheckpointMonitor.Stats>> checkpoints;
 
@@ -247,10 +220,10 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       P properties;
 
       @JsonProperty("started")
-      LocalDateTime started;
+      Instant started;
 
       @JsonProperty("finished")
-      LocalDateTime finished;
+      Instant finished;
 
       @JsonProperty("duration-in-seconds")
       Long durationInSeconds;
@@ -299,17 +272,94 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
    @Override
    public List<Metric<List<Marker>>> getMarkerMetrics() {
-      return null;
+      return markers;
    }
 
    @Override
    public List<Metric<TimeSeries>> getTimeSeriesMetrics() {
-      return null;
+      var checkpoints = getCheckpoints(history, runningExecutions);
+      var stages = getStages(history, runningExecutions);
+
+      var checkpointCounts = checkpoints
+         .stream()
+         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+            Strings.convert(cp).toSnakeCase() + "__" + "count",
+            "number of elements processed within interval",
+            () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
+               .map(s -> DataPoint.apply(s.moment(), s.count()))
+               .collect(Collectors.toList()),
+            system))
+         .collect(Collectors.toList());
+
+      var checkpointThroughput = checkpoints
+         .stream()
+         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+            Strings.convert(cp).toSnakeCase() + "__" + "throughput_elements_per_second",
+            "number of elements processed within interval",
+            () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
+               .map(s -> DataPoint.apply(s.moment(), s.throughputElementsPerSecond()))
+               .collect(Collectors.toList()),
+            system))
+         .collect(Collectors.toList());
+
+      var checkpointPullPushLatency = checkpoints
+         .stream()
+         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+            Strings.convert(cp).toSnakeCase() + "__" + "pull_push_latency_ns",
+            "pull-push latency within interval",
+            () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
+               .map(s -> DataPoint.apply(s.moment(), s.pullPushLatencyNanos()))
+               .collect(Collectors.toList()),
+            system))
+         .collect(Collectors.toList());
+
+      var checkpointPushPullLatency = checkpoints
+         .stream()
+         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+            Strings.convert(cp).toSnakeCase() + "__" + "push_pull_latency_ns",
+            "push-pull latency within interval",
+            () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
+               .map(s -> DataPoint.apply(s.moment(), s.pushPullLatencyNanos()))
+               .collect(Collectors.toList()),
+            system))
+         .collect(Collectors.toList());
+
+      var stageLatency = stages
+         .stream()
+         .map(st -> Metrics.createTimeSeriesMetricFromDataPoints(
+            Strings.convert(st).toSnakeCase() + "__" + "latency_ms",
+            "The average latency in ms of the stage for the measured interval.",
+            () -> getLatencyMonitorEvents(st, history, runningExecutions)
+               .map(s -> DataPoint.apply(s.moment(), s.avgLatency()))
+               .collect(Collectors.toList()),
+            system))
+         .collect(Collectors.toList());
+
+      var stageCount = stages
+         .stream()
+         .map(st -> Metrics.createTimeSeriesMetricFromDataPoints(
+            Strings.convert(st).toSnakeCase() + "__" + "count",
+            "The number of processed elements within the interval.",
+            () -> getLatencyMonitorEvents(st, history, runningExecutions)
+               .map(s -> DataPoint.apply(s.moment(), s.avgLatency()))
+               .collect(Collectors.toList()),
+            system))
+         .collect(Collectors.toList());
+
+      var stats = Lists.<Metric<TimeSeries>>newArrayList();
+      stats.addAll(checkpointCounts);
+      stats.addAll(checkpointThroughput);
+      stats.addAll(checkpointPullPushLatency);
+      stats.addAll(checkpointPushPullLatency);
+      stats.addAll(stageLatency);
+      stats.addAll(stageCount);
+
+      return stats;
    }
 
    @Override
    public void onTriggered(String executionId, P properties) {
-      var exec = Running.apply(System.nanoTime(), properties, LocalDateTime.now(), Maps.newHashMap(), Maps.newHashMap());
+      var exec = Running.apply(System.nanoTime(), properties, Instant.now(), Maps.newHashMap(), Maps.newHashMap());
       runningExecutions.put(executionId, exec);
    }
 
@@ -320,11 +370,13 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
    @Override
    public void onFailed(String executionId, Throwable cause) {
+      addFinalStats(executionId);
       addToHistory(executionId, JobResult.FAILED, null, ExceptionUtils.getMessage(cause));
    }
 
    @Override
    public void onCompleted(String executionId, C result) {
+      addFinalStats(executionId);
       addToHistory(executionId, JobResult.COMPLETED, result, null);
    }
 
@@ -335,11 +387,6 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
    @Override
    public void onStats(String executionId, String name, CheckpointMonitor.Stats statistics) {
-      if (!checkpoints.contains(name)) {
-         LOG.warn("Received stats for unknown checkpoint `{}`", name);
-         return;
-      }
-
       if (runningExecutions.containsKey(executionId)) {
          var running = runningExecutions.get(executionId);
 
@@ -347,6 +394,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
             running.getCheckpoints().get(name).add(statistics);
          } else {
             var queue = EvictingQueue.<CheckpointMonitor.Stats>create(statsLimit);
+            queue.add(new CheckpointMonitor.Stats(running.getStarted(), 0, 0, 0, 0));
             queue.add(statistics);
             running.getCheckpoints().put(name, queue);
          }
@@ -355,11 +403,6 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
    @Override
    public void onStats(String executionId, String name, LatencyMonitor.Stats statistics) {
-      if (!stages.contains(name)) {
-         LOG.warn("Received stats for unknown stage `{}`", name);
-         return;
-      }
-
       if (runningExecutions.containsKey(executionId)) {
          var running = runningExecutions.get(executionId);
 
@@ -367,6 +410,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
             running.getStages().get(name).add(statistics);
          } else {
             var queue = EvictingQueue.<LatencyMonitor.Stats>create(statsLimit);
+            queue.add(new LatencyMonitor.Stats(running.getStarted(), 0, 0, 0));
             queue.add(statistics);
             running.getStages().put(name, queue);
          }
@@ -375,11 +419,13 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
    @Override
    public void onStopped(String executionId, C result) {
+      addFinalStats(executionId);
       addToHistory(executionId, JobResult.STOPPED, result, null);
    }
 
    @Override
    public void onStopped(String executionId) {
+      addFinalStats(executionId);
       addToHistory(executionId, JobResult.STOPPED, null, null);
    }
 
@@ -407,7 +453,21 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
          history.add(Executed.apply(
             executionId, exec.getProperties(), exec.getStarted(),
-            LocalDateTime.now(), seconds, completed, result, error, exec.checkpoints, exec.stages));
+            Instant.now(), seconds, completed, result, error, exec.checkpoints, exec.stages));
+      }
+   }
+
+   private void addFinalStats(String executionId) {
+      if (runningExecutions.containsKey(executionId)) {
+         var exec = runningExecutions.get(executionId);
+         var checkpoints = exec.checkpoints.keySet();
+         var stages = exec.stages.keySet();
+
+         checkpoints.forEach(cp -> exec.getCheckpoints().get(cp).add(new CheckpointMonitor.Stats(
+            Instant.now(), 0, 0, 0, 0)));
+
+         stages.forEach(cp -> exec.getStages().get(cp).add(new LatencyMonitor.Stats(
+            Instant.now(), 0, 0, 0)));
       }
    }
 

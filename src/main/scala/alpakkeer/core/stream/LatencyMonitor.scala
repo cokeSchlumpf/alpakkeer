@@ -51,7 +51,9 @@ final class LatencyMonitor[A](ctx: TimerContext) extends GraphStage[FanOutShape2
 
     setHandler(in, new InHandler {
       def onPush(): Unit = {
-        count += 1; sumLatency += ctx.stop(); push(out, grab(in))
+        count += 1
+        sumLatency += ctx.stop()
+        push(out, grab(in))
       }
     })
 

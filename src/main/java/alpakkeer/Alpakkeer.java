@@ -3,10 +3,10 @@ package alpakkeer;
 import akka.actor.ActorSystem;
 import alpakkeer.api.AlpakkeerAPI;
 import alpakkeer.config.AlpakkeerConfiguration;
+import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.resources.Resources;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.util.Templates;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,9 +24,9 @@ public final class Alpakkeer {
 
    private final AlpakkeerAPI api;
 
-   static Alpakkeer apply(ActorSystem system, CronScheduler scheduler, Resources resources, ObjectMapper om) {
+   static Alpakkeer apply(RuntimeConfiguration runtimeConfiguration, CronScheduler scheduler, Resources resources) {
       var config = AlpakkeerConfiguration.apply();
-      var api = AlpakkeerAPI.apply(config, scheduler, resources, om);
+      var api = AlpakkeerAPI.apply(config, scheduler, resources, runtimeConfiguration.getObjectMapper());
 
       var banner = Templates.renderTemplateFromResources("banner.twig", ImmutableMap.<String, Object>builder()
          .put("version", config.getVersion())
@@ -35,7 +35,7 @@ public final class Alpakkeer {
 
       LOG.info(banner);
 
-      return new Alpakkeer(system, scheduler, api);
+      return new Alpakkeer(runtimeConfiguration.getSystem(), scheduler, api);
    }
 
    public static AlpakkeerBuilder create() {
