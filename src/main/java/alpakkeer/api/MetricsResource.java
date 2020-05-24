@@ -122,7 +122,7 @@ public final class MetricsResource {
             .getTargets()
             .stream()
             .map(target -> {
-               if (target.getType().toLowerCase().equals("timeseries") && metrics.containsKey(target.getTarget())) {
+               if (target.getType() != null && target.getType().toLowerCase().equals("timeseries") && metrics.containsKey(target.getTarget())) {
                   CompletionStage<Object> gts = metrics.get(target.getTarget()).query(from, to).thenApply(ts ->
                      alpakkeer.core.values.grafana.TimeSeries.apply(
                         target.getTarget(),

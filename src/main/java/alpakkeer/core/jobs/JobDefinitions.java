@@ -168,7 +168,7 @@ public final class JobDefinitions {
          return withMonitor(LoggingJobMonitor.apply(name.getValue(), logger, runtimeConfiguration.getObjectMapper()));
       }
 
-      public JobSettingsConfiguration<P, C> withPrometheusMetricsMonitor() {
+      public JobSettingsConfiguration<P, C> withPrometheusMonitor() {
          return withMonitor(PrometheusJobMonitor.apply(name.getValue(), runtimeConfiguration.getCollectorRegistry()));
       }
 
