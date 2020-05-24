@@ -5,6 +5,9 @@ import akka.actor.ActorSystem;
 import akka.japi.function.Function2;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
+import alpakkeer.core.monitoring.values.DataPoint;
+import alpakkeer.core.monitoring.values.Marker;
+import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.util.Operators;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Lists;
@@ -15,14 +18,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-public final class Metrics {
+public final class MetricStores {
 
-   private Metrics() {
+   private MetricStores() {
 
    }
 
-   public static Metric<List<Marker>> createMarkerMetric(String name, String description, Function2<Instant, Instant, List<Marker>> get) {
-      return new Metric<>() {
+   public static MetricStore<List<Marker>> createMarkerMetric(String name, String description, Function2<Instant, Instant, List<Marker>> get) {
+      return new MetricStore<>() {
          @Override
          public String getName() {
             return name;
@@ -40,10 +43,10 @@ public final class Metrics {
       };
    }
 
-   public static Metric<TimeSeries> createTimeSeriesMetricCS(
+   public static MetricStore<TimeSeries> createTimeSeriesMetricCS(
       String name, String description, Function2<Instant, Instant, CompletionStage<TimeSeries>> get) {
 
-      return new Metric<>() {
+      return new MetricStore<>() {
          @Override
          public String getName() {
             return name;
@@ -61,11 +64,11 @@ public final class Metrics {
       };
    }
 
-   public static Metric<TimeSeries> createTimeSeriesMetric(String name, String description, Function2<Instant, Instant, TimeSeries> get) {
+   public static MetricStore<TimeSeries> createTimeSeriesMetric(String name, String description, Function2<Instant, Instant, TimeSeries> get) {
       return createTimeSeriesMetricCS(name, description, (f, t) -> CompletableFuture.completedFuture(get.apply(f, t)));
    }
 
-   public static Metric<TimeSeries> createTimeSeriesMetricFromDataPoints(
+   public static MetricStore<TimeSeries> createTimeSeriesMetricFromDataPoints(
       String name, String description, Source<DataPoint, NotUsed> datapoints, ActorSystem system) {
 
       return createTimeSeriesMetricCS(name, description, (from, to) -> datapoints
@@ -93,7 +96,7 @@ public final class Metrics {
          .thenApply(TimeSeries::apply));
    }
 
-   public static Metric<TimeSeries> createTimeSeriesMetricFromDataPoints(
+   public static MetricStore<TimeSeries> createTimeSeriesMetricFromDataPoints(
       String name, String description, Supplier<List<DataPoint>> datapoints, ActorSystem system) {
 
       return createTimeSeriesMetricFromDataPoints(name, description, Source.from(() -> datapoints.get().iterator()), system);

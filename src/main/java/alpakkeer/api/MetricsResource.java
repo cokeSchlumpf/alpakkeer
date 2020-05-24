@@ -1,17 +1,20 @@
 package alpakkeer.api;
 
-import alpakkeer.core.monitoring.Marker;
-import alpakkeer.core.monitoring.Metric;
-import alpakkeer.core.monitoring.TimeSeries;
+import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.core.monitoring.MetricStore;
+import alpakkeer.core.monitoring.values.Marker;
+import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.resources.Resources;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
 import alpakkeer.core.values.grafana.*;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.dsl.OpenApiBuilder;
+import io.prometheus.client.exporter.common.TextFormat;
 import lombok.AllArgsConstructor;
 import scala.Tuple2;
 
+import java.io.StringWriter;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @AllArgsConstructor
 public final class MetricsResource {
@@ -27,12 +31,33 @@ public final class MetricsResource {
 
    private final Resources resources;
 
-   public Handler getHealth() {
+   private final RuntimeConfiguration runtimeConfiguration;
+
+   public Handler getPrometheusMetrics() {
       var docs = OpenApiBuilder
          .document()
          .operation(op -> {
-            op.summary("Test connection");
-            op.description("Returns HTTP 200 for Grafana's `Test connection` call.");
+            op.summary("Prometheus Metrics");
+            op.description("Returns the current metrics to be collected by a Prometheus Server.");
+            op.addTagsItem("Metrics");
+         })
+         .result("200", String.class, TextFormat.CONTENT_TYPE_004);
+
+      return OpenApiBuilder.documented(docs, ctx -> {
+         var writer = new StringWriter();
+         TextFormat.write004(writer, runtimeConfiguration.getCollectorRegistry().metricFamilySamples());
+
+         ctx.header("Content-Type", TextFormat.CONTENT_TYPE_004);
+         ctx.result(writer.toString());
+      });
+   }
+
+   public Handler getGrafanaMetrics() {
+      var docs = OpenApiBuilder
+         .document()
+         .operation(op -> {
+            op.summary("Grafana metrics");
+            op.description("Returns the available metrics for Grafana JSON Data Source.");
             op.addTagsItem("Metrics");
          })
          .jsonArray("200", String.class);
@@ -159,8 +184,16 @@ public final class MetricsResource {
       });
    }
 
-   private Map<String, Metric<List<Marker>>> getMarkers() {
-      return resources
+   private Map<String, MetricStore<List<Marker>>> getMarkers() {
+      var collectors = runtimeConfiguration
+         .getMetricsCollectors()
+         .stream()
+         .flatMap(collector -> collector
+            .getMarkerMetrics()
+            .stream()
+            .map(ts -> Tuple2.apply(ts.getName(), ts)));
+
+      var jobs = resources
          .getJobs()
          .stream()
          .flatMap(job -> job
@@ -170,22 +203,35 @@ public final class MetricsResource {
             .getMarkerMetrics()
             .stream()
             .map(m -> Tuple2.apply(job.getDefinition().getName().getValue(), m)))
-         .collect(Collectors.toMap(
-            t -> {
-               var jobName = t._1();
-               var metricName = t._2().getName();
+         .map(t -> {
+            var jobName = t._1();
+            var metricName = t._2().getName();
+            var key = String.format(
+               "%s__%s",
+               Strings.convert(jobName).toSnakeCase(),
+               Strings.convert(metricName).toSnakeCase());
 
-               return String.format(
-                  "%s__%s",
-                  Strings.convert(jobName).toSnakeCase(),
-                  Strings.convert(metricName).toSnakeCase());
-            },
+            return Tuple2.apply(key, t._2());
+         });
+
+      return Stream
+         .concat(jobs, collectors)
+         .collect(Collectors.toMap(
+            t -> t._1,
             t -> t._2
          ));
    }
 
-   private Map<String, Metric<TimeSeries>> getTimeSeriesMetrics() {
-      return resources
+   private Map<String, MetricStore<TimeSeries>> getTimeSeriesMetrics() {
+      var collectors = runtimeConfiguration
+         .getMetricsCollectors()
+         .stream()
+         .flatMap(collector -> collector
+         .getTimeSeriesMetrics()
+         .stream()
+         .map(ts -> Tuple2.apply(ts.getName(), ts)));
+
+      var jobs = resources
          .getJobs()
          .stream()
          .flatMap(job -> job
@@ -195,16 +241,21 @@ public final class MetricsResource {
             .getTimeSeriesMetrics()
             .stream()
             .map(m -> Tuple2.apply(job.getDefinition().getName().getValue(), m)))
-         .collect(Collectors.toMap(
-            t -> {
-               var jobName = t._1();
-               var metricName = t._2().getName();
+         .map(t -> {
+            var jobName = t._1();
+            var metricName = t._2().getName();
+            var key = String.format(
+               "%s__%s",
+               Strings.convert(jobName).toSnakeCase(),
+               Strings.convert(metricName).toSnakeCase());
 
-               return String.format(
-                  "%s__%s",
-                  Strings.convert(jobName).toSnakeCase(),
-                  Strings.convert(metricName).toSnakeCase());
-            },
+            return Tuple2.apply(key, t._2());
+         });;
+
+      return Stream
+         .concat(jobs, collectors)
+         .collect(Collectors.toMap(
+            t -> t._1,
             t -> t._2
          ));
    }

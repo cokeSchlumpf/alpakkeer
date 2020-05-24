@@ -1,11 +1,9 @@
 package alpakkeer;
 
-import akka.actor.ActorSystem;
 import alpakkeer.api.AlpakkeerAPI;
 import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.resources.Resources;
-import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.util.Templates;
 import com.google.common.collect.ImmutableMap;
 import lombok.AccessLevel;
@@ -18,15 +16,12 @@ public final class Alpakkeer {
 
    private static final Logger LOG = LoggerFactory.getLogger(Alpakkeer.class);
 
-   private final ActorSystem system;
-
-   private final CronScheduler scheduler;
+   private final RuntimeConfiguration runtimeConfiguration;
 
    private final AlpakkeerAPI api;
 
-   static Alpakkeer apply(RuntimeConfiguration runtimeConfiguration, CronScheduler scheduler, Resources resources) {
-      var config = AlpakkeerConfiguration.apply();
-      var api = AlpakkeerAPI.apply(config, scheduler, resources, runtimeConfiguration.getObjectMapper());
+   static Alpakkeer apply(AlpakkeerConfiguration config, RuntimeConfiguration runtimeConfiguration, Resources resources) {
+      var api = AlpakkeerAPI.apply(config, runtimeConfiguration, resources);
 
       var banner = Templates.renderTemplateFromResources("banner.twig", ImmutableMap.<String, Object>builder()
          .put("version", config.getVersion())
@@ -35,7 +30,7 @@ public final class Alpakkeer {
 
       LOG.info(banner);
 
-      return new Alpakkeer(runtimeConfiguration.getSystem(), scheduler, api);
+      return new Alpakkeer(runtimeConfiguration, api);
    }
 
    public static AlpakkeerBuilder create() {
@@ -49,12 +44,17 @@ public final class Alpakkeer {
    public void stop() {
       LOG.info("Terminating Alpakkeer");
 
-      scheduler
+      runtimeConfiguration
+         .getScheduler()
          .terminate()
          .thenAccept(done -> LOG.info("... scheduler stopped"));
 
-      system.terminate();
-      system
+      runtimeConfiguration
+         .getSystem()
+         .terminate();
+
+      runtimeConfiguration
+         .getSystem()
          .getWhenTerminated()
          .thenAccept(terminated -> LOG.info("... actor system stopped"));
 

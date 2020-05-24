@@ -1,9 +1,8 @@
 package alpakkeer.api;
 
 import alpakkeer.config.AlpakkeerConfiguration;
+import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.resources.Resources;
-import alpakkeer.core.scheduler.CronScheduler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.plugin.json.JavalinJackson;
 import lombok.AccessLevel;
@@ -15,14 +14,16 @@ public final class AlpakkeerAPI {
    private final Javalin javalin;
 
    public static AlpakkeerAPI apply(
-      AlpakkeerConfiguration config, CronScheduler scheduler, Resources resources, ObjectMapper om) {
+      AlpakkeerConfiguration config,
+      RuntimeConfiguration runtimeConfiguration,
+      Resources resources) {
 
-      var jobs = new JobsResource(resources, om);
-      var admin = new AdminResource(config, scheduler);
-      var grafana = new GrafanaResource(om);
-      var metrics = new MetricsResource(resources);
+      var jobs = new JobsResource(resources, runtimeConfiguration.getObjectMapper());
+      var admin = new AdminResource(config, runtimeConfiguration.getScheduler());
+      var grafana = new GrafanaResource(runtimeConfiguration.getObjectMapper());
+      var metrics = new MetricsResource(resources, runtimeConfiguration);
 
-      JavalinJackson.configure(om);
+      JavalinJackson.configure(runtimeConfiguration.getObjectMapper());
 
       Javalin app = Javalin
          .create(cfg -> {
@@ -38,7 +39,8 @@ public final class AlpakkeerAPI {
          .post("/api/v1/jobs/:name", jobs.triggerJob())
 
          // Metrics
-         .get("/api/v1/metrics", metrics.getHealth())
+         .get("/api/v1/metrics", metrics.getPrometheusMetrics())
+         .get("/api/v1/metrics/search", metrics.getGrafanaMetrics())
          .post("/api/v1/metrics/search", metrics.search())
          .post("/api/v1/metrics/query", metrics.query())
          .get("/api/v1/metrics/annotations", metrics.searchAnnotations())

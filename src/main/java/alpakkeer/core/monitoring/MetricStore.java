@@ -3,7 +3,7 @@ package alpakkeer.core.monitoring;
 import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
-public interface Metric<T> {
+public interface MetricStore<T> {
 
    String getName();
 

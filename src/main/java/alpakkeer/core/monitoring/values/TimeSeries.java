@@ -1,4 +1,4 @@
-package alpakkeer.core.monitoring;
+package alpakkeer.core.monitoring.values;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

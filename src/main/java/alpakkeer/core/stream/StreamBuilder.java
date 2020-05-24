@@ -3,6 +3,7 @@ package alpakkeer.core.stream;
 import akka.NotUsed;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Sink;
+import io.prometheus.client.Counter;
 
 import java.time.Duration;
 

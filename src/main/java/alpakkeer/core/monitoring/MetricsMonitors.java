@@ -1,5 +1,7 @@
 package alpakkeer.core.monitoring;
 
+import alpakkeer.core.monitoring.values.Marker;
+import alpakkeer.core.monitoring.values.TimeSeries;
 import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 
@@ -21,7 +23,7 @@ public final class MetricsMonitors implements MetricsMonitor {
    }
 
    @Override
-   public List<Metric<List<Marker>>> getMarkerMetrics() {
+   public List<MetricStore<List<Marker>>> getMarkerMetrics() {
       return monitors
          .stream()
          .flatMap(m -> m.getMarkerMetrics().stream())
@@ -29,7 +31,7 @@ public final class MetricsMonitors implements MetricsMonitor {
    }
 
    @Override
-   public List<Metric<TimeSeries>> getTimeSeriesMetrics() {
+   public List<MetricStore<TimeSeries>> getTimeSeriesMetrics() {
       return monitors
          .stream()
          .flatMap(m -> m.getTimeSeriesMetrics().stream())

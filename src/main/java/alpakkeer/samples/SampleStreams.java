@@ -59,7 +59,7 @@ public final class SampleStreams {
          .filter(list -> !list.isEmpty());
 
       return FileIO
-         .fromFile(new File("./src/main/resources/tweets.csv"))
+         .fromPath(new File("./src/main/resources/tweets.csv").toPath())
          .via(CsvParsing.lineScanner())
          .via(sb.createCheckpointMonitor("tweet-count", Duration.ofMillis(500)))
          .via(sb.createLatencyMonitor("tweet-processing", processTweets, Duration.ofSeconds(1)))

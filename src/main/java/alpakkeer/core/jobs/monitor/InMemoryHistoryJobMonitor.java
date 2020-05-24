@@ -2,6 +2,9 @@ package alpakkeer.core.jobs.monitor;
 
 import akka.actor.ActorSystem;
 import alpakkeer.core.monitoring.*;
+import alpakkeer.core.monitoring.values.DataPoint;
+import alpakkeer.core.monitoring.values.Marker;
+import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.stream.CheckpointMonitor;
 import alpakkeer.core.stream.LatencyMonitor;
 import alpakkeer.core.util.Operators;
@@ -41,7 +44,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
    EvictingQueue<Executed<P, C>> history;
 
-   List<Metric<List<Marker>>> markers;
+   List<MetricStore<List<Marker>>> markers;
 
    public static <P, C> InMemoryHistoryJobMonitor<P, C> apply(
       int limit, int statsLimit, ObjectMapper om, ActorSystem system) {
@@ -49,7 +52,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
       var history = EvictingQueue.<Executed<P, C>>create(limit);
       var running = new ConcurrentHashMap<String, Running<P>>();
 
-      var runsSuccessful = Metrics.createMarkerMetric(
+      var runsSuccessful = MetricStores.createMarkerMetric(
          "runs_successful",
          "Markers for successful job executions",
          (from, to) -> history
@@ -66,7 +69,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
             })
             .collect(Collectors.toList()));
 
-      var runsFailed = Metrics.createMarkerMetric(
+      var runsFailed = MetricStores.createMarkerMetric(
          "runs_failed",
          "Markers for failed job executions",
          (from, to) -> history
@@ -82,7 +85,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
             })
             .collect(Collectors.toList()));
 
-      var runsStopped = Metrics.createMarkerMetric(
+      var runsStopped = MetricStores.createMarkerMetric(
          "runs_stopped",
          "Markers for failed job executions",
          (from, to) -> history
@@ -271,18 +274,18 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
    }
 
    @Override
-   public List<Metric<List<Marker>>> getMarkerMetrics() {
+   public List<MetricStore<List<Marker>>> getMarkerMetrics() {
       return markers;
    }
 
    @Override
-   public List<Metric<TimeSeries>> getTimeSeriesMetrics() {
+   public List<MetricStore<TimeSeries>> getTimeSeriesMetrics() {
       var checkpoints = getCheckpoints(history, runningExecutions);
       var stages = getStages(history, runningExecutions);
 
       var checkpointCounts = checkpoints
          .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+         .map(cp -> MetricStores.createTimeSeriesMetricFromDataPoints(
             Strings.convert(cp).toSnakeCase() + "__count",
             "number of elements processed within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
@@ -293,7 +296,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
       var checkpointThroughput = checkpoints
          .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+         .map(cp -> MetricStores.createTimeSeriesMetricFromDataPoints(
             Strings.convert(cp).toSnakeCase() + "__throughput_elements_per_second",
             "number of elements processed within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
@@ -304,7 +307,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
       var checkpointPullPushLatency = checkpoints
          .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+         .map(cp -> MetricStores.createTimeSeriesMetricFromDataPoints(
             Strings.convert(cp).toSnakeCase() + "__pull_push_latency_ns",
             "pull-push latency within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
@@ -315,7 +318,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
       var checkpointPushPullLatency = checkpoints
          .stream()
-         .map(cp -> Metrics.createTimeSeriesMetricFromDataPoints(
+         .map(cp -> MetricStores.createTimeSeriesMetricFromDataPoints(
             Strings.convert(cp).toSnakeCase() + "__push_pull_latency_ns",
             "push-pull latency within interval",
             () -> getCheckpointMonitorEvents(cp, history, runningExecutions)
@@ -326,7 +329,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
       var stageLatency = stages
          .stream()
-         .map(st -> Metrics.createTimeSeriesMetricFromDataPoints(
+         .map(st -> MetricStores.createTimeSeriesMetricFromDataPoints(
             Strings.convert(st).toSnakeCase() + "__latency_ms",
             "The average latency in ms of the stage for the measured interval.",
             () -> getLatencyMonitorEvents(st, history, runningExecutions)
@@ -337,7 +340,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
 
       var stageCount = stages
          .stream()
-         .map(st -> Metrics.createTimeSeriesMetricFromDataPoints(
+         .map(st -> MetricStores.createTimeSeriesMetricFromDataPoints(
             Strings.convert(st).toSnakeCase() + "__count",
             "The number of processed elements within the interval.",
             () -> getLatencyMonitorEvents(st, history, runningExecutions)
@@ -346,7 +349,7 @@ public final class InMemoryHistoryJobMonitor<P, C> implements JobMonitor<P, C>, 
             system))
          .collect(Collectors.toList());
 
-      var stats = Lists.<Metric<TimeSeries>>newArrayList();
+      var stats = Lists.<MetricStore<TimeSeries>>newArrayList();
       stats.addAll(checkpointCounts);
       stats.addAll(checkpointThroughput);
       stats.addAll(checkpointPullPushLatency);
