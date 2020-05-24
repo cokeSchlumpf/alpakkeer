@@ -20,7 +20,7 @@ public final class AlpakkeerOpenApi {
 
       var options = new OpenApiOptions(info)
          .path("/api/v1")
-         .swagger(new SwaggerOptions("/api/v1/ui").title(String.format("%s Open API Documentation", config.getName())));
+         .swagger(new SwaggerOptions("/").title(String.format("%s Open API Documentation", config.getName())));
 
       return new OpenApiPlugin(options);
    }
