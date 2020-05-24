@@ -33,6 +33,15 @@ public final class MetricsResource {
 
    private final RuntimeConfiguration runtimeConfiguration;
 
+   public Handler getAnnotationsHeader() {
+      return ctx -> {
+         ctx.header("Access-Control-Allow-Origin", "*");
+         ctx.header("Access-Control-Allow-Methods", "POST");
+         ctx.header("Access-Control-Allow-Headers", "accept, content-type");
+         ctx.status(200);
+      };
+   }
+
    public Handler getPrometheusMetrics() {
       var docs = OpenApiBuilder
          .document()

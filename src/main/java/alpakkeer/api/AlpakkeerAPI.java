@@ -20,7 +20,6 @@ public final class AlpakkeerAPI {
 
       var jobs = new JobsResource(resources, runtimeConfiguration.getObjectMapper());
       var admin = new AdminResource(config, runtimeConfiguration.getScheduler());
-      var grafana = new GrafanaResource(runtimeConfiguration.getObjectMapper());
       var metrics = new MetricsResource(resources, runtimeConfiguration);
 
       JavalinJackson.configure(runtimeConfiguration.getObjectMapper());
@@ -45,21 +44,11 @@ public final class AlpakkeerAPI {
          .post("/api/v1/metrics/query", metrics.query())
          .get("/api/v1/metrics/annotations", metrics.searchAnnotations())
          .post("/api/v1/metrics/annotations", metrics.queryAnnotations())
-         .head("/api/v1/metrics/annotations", grafana.getAnnotationsHeader())
+         .head("/api/v1/metrics/annotations", metrics.getAnnotationsHeader())
 
          // Admin
          .get("/api/v1/about", admin.getAbout())
          .get("/api/v1/admin/crontab", admin.getJobs())
-
-         // Grafana Test endpoints
-         .get("/grafana", grafana.getHealth())
-         .post("/grafana/search", grafana.search())
-         .post("/grafana/query", grafana.query())
-         .post("/grafana/annotations", grafana.getAnnotations())
-         .head("/grafana/annotations", grafana.getAnnotationsHeader())
-         .get("/grafana/tag-keys", grafana.getTagKeys())
-         .post("/grafana/tag-keys", grafana.getTagKeys())
-         .post("/grafana/tag-values", grafana.getTagValues())
 
          // run ...
          .start(config.getApi().getHostname(), config.getApi().getPort());
