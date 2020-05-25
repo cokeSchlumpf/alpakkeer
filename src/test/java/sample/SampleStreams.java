@@ -1,4 +1,4 @@
-package alpakkeer.samples;
+package sample;
 
 import akka.Done;
 import akka.stream.alpakka.csv.javadsl.CsvParsing;

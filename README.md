@@ -37,4 +37,6 @@ Alpakkeer bundles various libraries and components to quickly build, run and ope
 
 * Prometheus Client to record application and stream metrics. Alpakkeer also provides custom FlowStages to argument your stream with Akka Streams specific metrics. [More Details ...](#)
 
-All components are made simply composable and accessible via an easy to use DSL. 
+All components are made simply composable and accessible via an easy to use Java* DSL.
+
+<sup>\* Alpakkeer is intended to be used with Java, although not intended the DSL can be used with Scala 2.13 as well, Scala 2.12 is not supported. An adapted Scala DSL is not planned yet.</sup> 
