@@ -137,6 +137,29 @@ public final class JobsResource {
       });
    }
 
+   public Handler stop() {
+      var docs = OpenApiBuilder
+         .document()
+         .operation(op -> {
+            op.summary("Stop Job Execution");
+            op.description("Stops the current job execution.");
+            op.addTagsItem("Jobs");
+         })
+         .pathParam("name", String.class, p -> p.description("The name of the job"))
+         .queryParam("clear", Boolean.class, false, p -> p.description("Set this parameter to clear the whole queue"))
+         .result("200");
+
+      return OpenApiBuilder.documented(docs, ctx -> {
+         var name = Name.apply(ctx.pathParam(PARAM_NAME));
+         var clearQueue = ctx.queryParam("clear") != null;
+
+         resources.getJob(name).ifPresentOrElse(
+            job -> ctx.result(job.cancel(clearQueue).thenApply(d -> "Ok").toCompletableFuture()),
+            () -> notFound(name)
+         );
+      });
+   }
+
    private void notFound(Name name) {
       throw new NotFoundResponse(String.format("No job found with name `%s`", name.getValue()));
    }

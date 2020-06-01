@@ -37,6 +37,7 @@ public final class AlpakkeerAPI {
          .get("/api/v1/jobs/:name", jobs.getJob())
          .options("/api/v1/jobs/:name", jobs.getTriggerJobExample())
          .post("/api/v1/jobs/:name", jobs.triggerJob())
+         .delete("/api/v1/jobs/:name", jobs.stop())
 
          // Processes
          .get("/api/v1/processes", processes.getProcesses())
