@@ -1,34 +1,33 @@
-package alpakkeer.core.jobs.monitor;
+package alpakkeer.core.processes.monitor;
 
+import alpakkeer.core.jobs.monitor.JobMonitor;
 import alpakkeer.core.monitoring.MetricsMonitor;
 import alpakkeer.core.monitoring.MetricsMonitors;
 import alpakkeer.core.stream.CheckpointMonitor;
 import alpakkeer.core.stream.LatencyMonitor;
 import alpakkeer.core.util.Operators;
 import com.google.common.collect.Lists;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor(staticName = "apply")
-public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
+@AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
+public final class ProcessMonitorGroup implements ProcessMonitor {
 
-   private final List<JobMonitor<P, C>> monitors;
+   private List<ProcessMonitor> monitors;
 
-   public static <P, C> CombinedJobMonitor<P, C> apply() {
-      return CombinedJobMonitor.apply(Lists.newArrayList());
+   public static ProcessMonitorGroup apply() {
+      return apply(Lists.newArrayList());
    }
 
-   public CombinedJobMonitor<P, C> withMonitor(JobMonitor<P, C> monitor) {
+   public ProcessMonitorGroup withMonitor(ProcessMonitor monitor) {
       this.monitors.add(monitor);
       return this;
-   }
-
-   public List<JobMonitor<P, C>> getMonitors() {
-      return List.copyOf(monitors);
    }
 
    public MetricsMonitors getMetricsMonitors() {
@@ -41,9 +40,8 @@ public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
       return MetricsMonitors.apply(mons);
    }
 
-   @Override
-   public void onTriggered(String executionId, P properties) {
-      monitors.forEach(m -> m.onTriggered(executionId, properties));
+   public List<ProcessMonitor> getMonitors() {
+      return List.copyOf(monitors);
    }
 
    @Override
@@ -52,18 +50,13 @@ public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
    }
 
    @Override
-   public void onFailed(String executionId, Throwable cause) {
-      monitors.forEach(m -> m.onFailed(executionId, cause));
+   public void onFailed(String executionId, Throwable cause, Instant nextRetry) {
+      monitors.forEach(m -> m.onFailed(executionId, cause, nextRetry));
    }
 
    @Override
-   public void onCompleted(String executionId, C result) {
-      monitors.forEach(m -> m.onCompleted(executionId, result));
-   }
-
-   @Override
-   public void onCompleted(String executionId) {
-      monitors.forEach(m -> m.onCompleted(executionId));
+   public void onCompletion(String executionId, Instant nextStart) {
+      monitors.forEach(m -> m.onCompletion(executionId, nextStart));
    }
 
    @Override
@@ -77,30 +70,15 @@ public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
    }
 
    @Override
-   public void onStopped(String executionId, C result) {
-      monitors.forEach(m -> m.onStopped(executionId, result));
-   }
-
-   @Override
    public void onStopped(String executionId) {
       monitors.forEach(m -> m.onStopped(executionId));
-   }
-
-   @Override
-   public void onQueued(int newQueueSize) {
-      monitors.forEach(m -> m.onQueued(newQueueSize));
-   }
-
-   @Override
-   public void onEnqueued(int newQueueSize) {
-      monitors.forEach(m -> m.onEnqueued(newQueueSize));
    }
 
    @Override
    public CompletionStage<Optional<Object>> getStatus() {
       var allMonitors = monitors
          .stream()
-         .map(JobMonitor::getStatus)
+         .map(ProcessMonitor::getStatus)
          .collect(Collectors.toList());
 
       return Operators
@@ -108,5 +86,4 @@ public final class CombinedJobMonitor<P, C> implements JobMonitor<P, C> {
          .thenApply(all -> all.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList()))
          .thenApply(Optional::of);
    }
-
 }

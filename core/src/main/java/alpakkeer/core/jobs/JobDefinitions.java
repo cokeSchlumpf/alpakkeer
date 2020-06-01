@@ -62,13 +62,13 @@ public final class JobDefinitions {
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
-      private final CombinedJobMonitor<P, C> monitors;
+      private final JobMonitorGroup<P, C> monitors;
 
       public static <P, C> JobRunnableConfiguration<P, C> apply(
          Name name, RuntimeConfiguration runtimeConfiguration,
          JobTypeConfiguration<P, C> jobTypes) {
 
-         return apply(name, runtimeConfiguration, jobTypes, CombinedJobMonitor.apply());
+         return apply(name, runtimeConfiguration, jobTypes, JobMonitorGroup.apply());
       }
 
       public JobSettingsConfiguration<P, C> runCancelableCS(Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
@@ -129,7 +129,7 @@ public final class JobDefinitions {
 
       private final Function3<String, P, C, CompletionStage<JobHandle<C>>> run;
 
-      private final CombinedJobMonitor<P, C> monitors;
+      private final JobMonitorGroup<P, C> monitors;
 
       private List<ScheduleExecution<P>> scheduleExecutions;
 
@@ -137,7 +137,7 @@ public final class JobDefinitions {
 
       public static <P, C> JobSettingsConfiguration<P, C> apply(
          Name name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
-         Function3<String, P, C, CompletionStage<JobHandle<C>>> run, CombinedJobMonitor<P, C> monitors) {
+         Function3<String, P, C, CompletionStage<JobHandle<C>>> run, JobMonitorGroup<P, C> monitors) {
 
          var logger = LoggerFactory.getLogger(String.format(
             "alpakkeer.jobs.%s",
@@ -212,7 +212,7 @@ public final class JobDefinitions {
 
       private final List<ScheduleExecution<P>> schedule;
 
-      private final CombinedJobMonitor<P, C> monitors;
+      private final JobMonitorGroup<P, C> monitors;
 
       @Override
       public P getDefaultProperties() {
@@ -240,7 +240,7 @@ public final class JobDefinitions {
       }
 
       @Override
-      public CombinedJobMonitor<P, C> getMonitors() {
+      public JobMonitorGroup<P, C> getMonitors() {
          return monitors;
       }
 

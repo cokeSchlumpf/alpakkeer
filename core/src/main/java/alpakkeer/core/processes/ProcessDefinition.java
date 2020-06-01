@@ -1,5 +1,7 @@
 package alpakkeer.core.processes;
 
+import alpakkeer.core.processes.monitor.ProcessMonitor;
+import alpakkeer.core.processes.monitor.ProcessMonitorGroup;
 import alpakkeer.core.values.Name;
 import org.slf4j.Logger;
 
@@ -11,11 +13,13 @@ public interface ProcessDefinition extends ProcessRunner {
 
    Name getName();
 
-   Logger getLogger();
+   Duration getCompletionRestartBackoff();
 
    Duration getInitialRetryBackoff();
 
-   Duration getCompletionRestartBackoff();
+   Logger getLogger();
+
+   ProcessMonitorGroup getMonitors();
 
    Duration getRetryBackoffResetTimeout();
 

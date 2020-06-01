@@ -1,7 +1,7 @@
 package alpakkeer.core.jobs;
 
 import alpakkeer.core.jobs.model.ScheduleExecution;
-import alpakkeer.core.jobs.monitor.CombinedJobMonitor;
+import alpakkeer.core.jobs.monitor.JobMonitorGroup;
 import alpakkeer.core.values.Name;
 import org.slf4j.Logger;
 
@@ -19,6 +19,6 @@ public interface JobDefinition<P, C> extends JobRunner<P, C> {
 
    List<ScheduleExecution<P>> getSchedule();
 
-   CombinedJobMonitor<P, C> getMonitors();
+   JobMonitorGroup<P, C> getMonitors();
 
 }

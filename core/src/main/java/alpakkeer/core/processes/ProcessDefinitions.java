@@ -6,6 +6,9 @@ import akka.japi.function.Function2;
 import akka.stream.UniqueKillSwitch;
 import akka.stream.javadsl.RunnableGraph;
 import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.core.processes.monitor.LoggingProcessMonitor;
+import alpakkeer.core.processes.monitor.ProcessMonitor;
+import alpakkeer.core.processes.monitor.ProcessMonitorGroup;
 import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
@@ -81,18 +84,22 @@ public final class ProcessDefinitions {
 
       private boolean initiallyStarted;
 
+      private final ProcessMonitorGroup monitors;
+
       public static ProcessDefinitionBuilder apply(String name, ProcessRunner runner) {
          var logger = LoggerFactory.getLogger(String.format(
             "alpakkeer.processes.%s",
             Strings.convert(name).toSnakeCase()));
 
-         return apply(name, runner, Duration.ofSeconds(10), Duration.ofMinutes(10), Duration.ofMinutes(1), logger, true);
+         return apply(
+            name, runner, Duration.ofSeconds(10), Duration.ofMinutes(10),
+            Duration.ofMinutes(1), logger, true, ProcessMonitorGroup.apply());
       }
 
       public ProcessDefinition build() {
          return SimpleProcessDefinition.apply(
             name, initialRetryBackoff, completionRestartBackoff, retryBackoffResetTimeout, runner,
-            logger, initiallyStarted);
+            logger, initiallyStarted, monitors);
       }
 
       public ProcessDefinitionBuilder initializeStarted() {
@@ -113,6 +120,15 @@ public final class ProcessDefinitions {
       public ProcessDefinitionBuilder withInitialRetryBackoff(Duration initialRetryBackoff) {
          this.initialRetryBackoff = initialRetryBackoff;
          return this;
+      }
+
+      public ProcessDefinitionBuilder withMonitor(ProcessMonitor monitor) {
+         this.monitors.withMonitor(monitor);
+         return this;
+      }
+
+      public ProcessDefinitionBuilder withLoggingMonitor() {
+         return withMonitor(LoggingProcessMonitor.apply(name, logger));
       }
 
       public ProcessDefinitionBuilder withRetryBackoffResetTimeout(Duration retryBackoffResetTimeout) {
@@ -139,6 +155,8 @@ public final class ProcessDefinitions {
 
       private final boolean initiallyStarted;
 
+      private final ProcessMonitorGroup monitors;
+
       @Override
       public boolean isInitiallyStarted() {
          return initiallyStarted;
@@ -152,6 +170,11 @@ public final class ProcessDefinitions {
       @Override
       public Logger getLogger() {
          return logger;
+      }
+
+      @Override
+      public ProcessMonitorGroup getMonitors() {
+         return monitors;
       }
 
       @Override
