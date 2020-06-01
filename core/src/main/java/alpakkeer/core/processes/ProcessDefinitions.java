@@ -28,6 +28,10 @@ public final class ProcessDefinitions {
 
    private final StreamBuilder sb;
 
+   public static ProcessDefinitions apply(RuntimeConfiguration runtimeConfiguration) {
+      return apply(runtimeConfiguration, null); // TODO wm0
+   }
+
    @AllArgsConstructor(staticName = "apply")
    public static class ProcessRunnableBuilder {
 

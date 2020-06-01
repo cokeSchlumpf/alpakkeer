@@ -19,6 +19,7 @@ public final class AlpakkeerAPI {
       Resources resources) {
 
       var jobs = new JobsResource(resources, runtimeConfiguration.getObjectMapper());
+      var processes = new ProcessesResource(resources);
       var admin = new AdminResource(config, runtimeConfiguration.getScheduler());
       var metrics = new MetricsResource(resources, runtimeConfiguration);
 
@@ -36,6 +37,12 @@ public final class AlpakkeerAPI {
          .get("/api/v1/jobs/:name", jobs.getJob())
          .options("/api/v1/jobs/:name", jobs.getTriggerJobExample())
          .post("/api/v1/jobs/:name", jobs.triggerJob())
+
+         // Processes
+         .get("/api/v1/processes", processes.getProcesses())
+         .get("/api/v1/processes/:name", processes.getProcess())
+         .delete("/api/v1/processes/:name", processes.stop())
+         .post("/api/v1/processes/:name", processes.start())
 
          // Metrics
          .get("/api/v1/metrics", metrics.getPrometheusMetrics())

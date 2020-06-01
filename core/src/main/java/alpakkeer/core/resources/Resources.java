@@ -7,6 +7,9 @@ import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.Jobs;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.values.TimeSeries;
+import alpakkeer.core.processes.Process;
+import alpakkeer.core.processes.ProcessDefinition;
+import alpakkeer.core.processes.Processes;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.values.Name;
 import com.google.common.collect.Maps;
@@ -30,10 +33,12 @@ public class Resources {
 
    private final Map<Name, Job<?, ?>> jobs;
 
+   private final Map<String, Process> processes;
+
    private final Map<String, MetricStore<TimeSeries>> tsMetrics;
 
    public static Resources apply(ActorSystem system, CronScheduler scheduler, ContextStore contextStore) {
-      return new Resources(system, scheduler, contextStore, Maps.newHashMap(), Maps.newHashMap());
+      return new Resources(system, scheduler, contextStore, Maps.newHashMap(), Maps.newHashMap(), Maps.newHashMap());
    }
 
    public <P, C> Job<P, C> addJob(JobDefinition<P, C> jobDefinition) {
@@ -50,6 +55,16 @@ public class Resources {
       tsMetrics.put(metric.getName(), metric);
    }
 
+   public Process addProcess(ProcessDefinition processDefinition) {
+      if (processes.containsKey(processDefinition.getName().getValue())) {
+         throw ProcessAlreadyExistsException.apply(processDefinition.getName());
+      } else {
+         var process = Processes.apply(system, processDefinition);
+         processes.put(processDefinition.getName().getValue(), process);
+         return process;
+      }
+   }
+
    public List<Job<?, ?>> getJobs() {
       return jobs
          .values()
@@ -64,6 +79,18 @@ public class Resources {
 
    public List<MetricStore<TimeSeries>> getTimeSeriesMetrics() {
       return List.copyOf(tsMetrics.values());
+   }
+
+   public List<Process> getProcesses() {
+      return processes
+         .values()
+         .stream()
+         .sorted(Comparator.comparing(p -> p.getDefinition().getName().getValue()))
+         .collect(Collectors.toList());
+   }
+
+   public Optional<Process> getProcess(String name) {
+      return Optional.ofNullable(processes.get(name));
    }
 
 }

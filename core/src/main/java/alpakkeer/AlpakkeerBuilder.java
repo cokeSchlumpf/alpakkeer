@@ -7,6 +7,8 @@ import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.JobDefinitions;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.values.TimeSeries;
+import alpakkeer.core.processes.ProcessDefinition;
+import alpakkeer.core.processes.ProcessDefinitions;
 import alpakkeer.core.resources.Resources;
 import com.google.common.collect.Lists;
 import lombok.AccessLevel;
@@ -21,12 +23,14 @@ public final class AlpakkeerBuilder {
 
    private List<Function<JobDefinitions, JobDefinition<?, ?>>> jobs;
 
+   private List<Function<ProcessDefinitions, ProcessDefinition>> processes;
+
    private List<Function<RuntimeConfiguration, MetricStore<TimeSeries>>> tsMetrics;
 
    private RuntimeConfigurationBuilder runtimeConfig;
 
    static AlpakkeerBuilder apply() {
-      return new AlpakkeerBuilder(Lists.newArrayList(), Lists.newArrayList(), RuntimeConfigurationBuilder.apply());
+      return new AlpakkeerBuilder(Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), RuntimeConfigurationBuilder.apply());
    }
 
    public AlpakkeerBuilder configure(Consumer<RuntimeConfigurationBuilder> configure) {
@@ -49,6 +53,11 @@ public final class AlpakkeerBuilder {
       return this;
    }
 
+   public AlpakkeerBuilder withProcess(Function<ProcessDefinitions, ProcessDefinition> builder) {
+      processes.add(builder);
+      return this;
+   }
+
    public Alpakkeer start() {
       var config = runtimeConfig.build();
       var resources = Resources.apply(config.getSystem(), config.getScheduler(), config.getContextStore());
@@ -56,6 +65,7 @@ public final class AlpakkeerBuilder {
       // initialize components
       config.getMetricsCollectors().forEach(c -> c.run(config));
       jobs.stream().map(f -> f.apply(JobDefinitions.apply(config))).forEach(resources::addJob);
+      processes.stream().map(f -> f.apply(ProcessDefinitions.apply(config))).forEach(resources::addProcess);
       tsMetrics.forEach(f -> resources.addTimeSeriesMetric(f.apply(config)));
 
       return Alpakkeer.apply(AlpakkeerConfiguration.apply(), config, resources);
