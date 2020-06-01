@@ -18,7 +18,7 @@ public final class Finalizing<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
-      LOG.warn("Received unexpected message `Completed` in state `finalizing`");
+      log.warn("Received unexpected message `Completed` in state `finalizing`");
       return this;
    }
 
@@ -29,7 +29,7 @@ public final class Finalizing<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onFailed(Failed<P, C> failed) {
-      LOG.warn("Received unexpected message `Failed` in state `finalizing`");
+      log.warn("Received unexpected message `Failed` in state `finalizing`");
       return this;
    }
 
@@ -41,7 +41,7 @@ public final class Finalizing<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onStarted(Started<P, C> started) {
-      LOG.warn("Received unexpected message `Started` in state `finalizing`");
+      log.warn("Received unexpected message `Started` in state `finalizing`");
       return this;
    }
 

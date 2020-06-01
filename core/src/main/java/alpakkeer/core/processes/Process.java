@@ -10,9 +10,9 @@ public interface Process {
 
    ProcessDefinition getDefinition();
 
-   CompletionStage<Done> resume();
+   CompletionStage<Done> start();
 
-   CompletionStage<Done> pause();
+   CompletionStage<Done> stop();
 
    CompletionStage<ProcessStatus> getStatus();
 

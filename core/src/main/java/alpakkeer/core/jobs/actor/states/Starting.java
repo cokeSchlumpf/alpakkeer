@@ -36,19 +36,19 @@ public final class Starting<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
-      LOG.warn("Received unexpected message `Completed` in state `starting`");
+      log.warn("Received unexpected message `Completed` in state `starting`");
       return this;
    }
 
    @Override
    public State<P, C> onFinalized(Finalized<P, C> finalized) {
-      LOG.warn("Received unexpected message `Finalized` in state `starting`");
+      log.warn("Received unexpected message `Finalized` in state `starting`");
       return this;
    }
 
    @Override
    public State<P, C> onFailed(Failed<P, C> failed) {
-      LOG.warn("An exception occurred while starting job", failed.getException());
+      log.warn("An exception occurred while starting job", failed.getException());
       context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
       return processQueue();
    }

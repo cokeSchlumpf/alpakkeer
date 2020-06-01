@@ -20,7 +20,7 @@ import java.util.concurrent.CompletionStage;
 
 public abstract class State<P, C> {
 
-   protected final Logger LOG;
+   protected final Logger log;
 
    protected final JobState state;
 
@@ -32,7 +32,7 @@ public abstract class State<P, C> {
       this.state = state;
       this.actor = actor;
       this.context = context;
-      this.LOG = context.getJobDefinition().getLogger();
+      this.log = context.getJobDefinition().getLogger();
    }
 
    public abstract State<P, C> onCompleted(Completed<P, C> completed);
@@ -58,7 +58,7 @@ public abstract class State<P, C> {
                actor.getSystem().ignoreRef(), actor.getSystem().ignoreRef())))
          .whenComplete((done, exception) -> {
             if (exception != null) {
-               LOG.warn("An exception occurred while scheduling a jb execution", exception);
+               log.warn("An exception occurred while scheduling a jb execution", exception);
             } else {
                actor.getSelf().tell(Scheduled.apply(
                   name, schedule.getCron(), schedule.getProperties(),
@@ -74,14 +74,14 @@ public abstract class State<P, C> {
 
       context.getScheduler().getJob(scheduled.getName()).whenComplete((details, exception) -> {
          if (exception != null) {
-            LOG.warn("An exception occurred while getting job details from scheduler", exception);
+            log.warn("An exception occurred while getting job details from scheduler", exception);
          } else {
             details.ifPresentOrElse(
                d -> scheduled.getReplyTo().tell(ScheduledExecution.apply(
                   scheduled.getProperties(), scheduled.isQueue(),
                   scheduled.getCron(), d.getNextExecution())),
                () ->
-                  LOG.warn("Received no job details from scheduler for scheduled execution `{}`", scheduled.getName().getValue()));
+                  log.warn("Received no job details from scheduler for scheduled execution `{}`", scheduled.getName().getValue()));
          }
       });
    }
@@ -111,7 +111,7 @@ public abstract class State<P, C> {
             })
          .whenComplete((details, ex) -> {
             if (ex != null) {
-               LOG.warn(
+               log.warn(
                   String.format("An exception occurred while fetching status details of job `%s`", context.getJobDefinition().getName().getValue()),
                   ex);
             } else {
@@ -126,7 +126,7 @@ public abstract class State<P, C> {
          .<C>readLatestContext(context.getJobDefinition().getName().getValue())
          .thenApply(opt -> opt.orElse(context.getJobDefinition().getInitialContext()))
          .exceptionally(ex -> {
-            LOG.warn(String.format(
+            log.warn(String.format(
                "An exception occurred while reading current context of job `%s`", context.getJobDefinition().getName().getValue()),
                ex);
 
@@ -141,7 +141,7 @@ public abstract class State<P, C> {
             ctx)
          .whenComplete((done, ex) -> {
             if (ex != null) {
-               LOG.warn(
+               log.warn(
                   String.format("An exception occurred while storing job context for job `%s`", context.getJobDefinition().getName().getValue()),
                   ex);
             }

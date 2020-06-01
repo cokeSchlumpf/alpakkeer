@@ -3,12 +3,20 @@ package alpakkeer.core.processes;
 import alpakkeer.core.values.Name;
 import org.slf4j.Logger;
 
-public interface ProcessDefinition {
+import java.time.Duration;
+
+public interface ProcessDefinition extends ProcessRunner {
+
+   boolean isInitiallyStarted();
 
    Name getName();
 
    Logger getLogger();
 
+   Duration getInitialRetryBackoff();
 
+   Duration getCompletionRestartBackoff();
+
+   Duration getRetryBackoffResetTimeout();
 
 }

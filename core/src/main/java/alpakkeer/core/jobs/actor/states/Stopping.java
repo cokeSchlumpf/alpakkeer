@@ -53,13 +53,13 @@ public final class Stopping<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onFinalized(Finalized<P, C> finalized) {
-      LOG.warn("Received unexpected message `Finalized` in state `stopping`");
+      log.warn("Received unexpected message `Finalized` in state `stopping`");
       return this;
    }
 
    @Override
    public State<P, C> onFailed(Failed<P, C> failed) {
-      LOG.warn(String.format("Stopped job execution `%s` with failure.", currentExecution.getId()), failed.getException());
+      log.warn(String.format("Stopped job execution `%s` with failure.", currentExecution.getId()), failed.getException());
       context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
       stopRequests.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
       return processQueue();
@@ -73,7 +73,7 @@ public final class Stopping<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onStarted(Started<P, C> started) {
-      LOG.warn("Received unexpected message `Started` in state `stopping`");
+      log.warn("Received unexpected message `Started` in state `stopping`");
       return this;
    }
 

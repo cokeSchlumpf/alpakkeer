@@ -37,7 +37,7 @@ public final class Running<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onFinalized(Finalized<P, C> finalized) {
-      LOG.warn("Received unexpected message `Finalized` in state `running`");
+      log.warn("Received unexpected message `Finalized` in state `running`");
       return this;
    }
 
@@ -55,13 +55,13 @@ public final class Running<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onStarted(Started<P, C> started) {
-      LOG.warn("Received unexpected message `Started` in state `running`");
+      log.warn("Received unexpected message `Started` in state `running`");
       return this;
    }
 
    @Override
    public State<P, C> onStop(Stop<P, C> stop) {
-      LOG.info("Received request to stop job execution `{}`", currentExecution.getId());
+      log.info("Received request to stop job execution `{}`", currentExecution.getId());
 
       handle.stop();
       if (stop.isClearQueue()) context.getQueue().clear();

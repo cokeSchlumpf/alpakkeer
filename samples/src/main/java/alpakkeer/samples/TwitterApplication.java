@@ -1,7 +1,5 @@
 package alpakkeer.samples;
 
-import akka.stream.javadsl.Sink;
-import akka.stream.javadsl.Source;
 import alpakkeer.core.config.Configs;
 import com.typesafe.config.Config;
 import twitter4j.Twitter;

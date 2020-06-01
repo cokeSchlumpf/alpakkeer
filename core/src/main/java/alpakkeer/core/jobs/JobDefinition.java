@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
-public interface JobDefinition<P, C> extends JobFunction<P, C> {
+public interface JobDefinition<P, C> extends JobRunner<P, C> {
 
    P getDefaultProperties();
 
