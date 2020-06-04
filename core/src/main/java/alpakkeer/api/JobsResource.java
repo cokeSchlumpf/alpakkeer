@@ -50,7 +50,7 @@ public final class JobsResource {
          .jsonArray("200", JobStatus.class);
 
       return OpenApiBuilder.documented(docs, ctx -> {
-         var eventualStatusList = resources.getJobs().stream().map(Job::getStatusUnchecked).collect(Collectors.toList());
+         var eventualStatusList = resources.getJobs().stream().map(Job::getStatus).collect(Collectors.toList());
          ctx.json(Operators.allOf(eventualStatusList).toCompletableFuture());
       });
    }

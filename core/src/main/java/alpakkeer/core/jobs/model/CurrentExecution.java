@@ -1,4 +1,4 @@
-package alpakkeer.core.jobs.actor.context;
+package alpakkeer.core.jobs.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;

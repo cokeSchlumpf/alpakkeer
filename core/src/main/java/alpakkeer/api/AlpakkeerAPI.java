@@ -15,27 +15,21 @@ public final class AlpakkeerAPI {
 
    public static AlpakkeerAPI apply(
       AlpakkeerConfiguration config,
-      RuntimeConfiguration runtimeConfiguration,
+      RuntimeConfiguration runtime,
       Resources resources) {
 
-      var jobs = new JobsResource(resources, runtimeConfiguration.getObjectMapper());
+      var jobs = new JobsResource(resources, runtime.getObjectMapper());
       var processes = new ProcessesResource(resources);
-      var admin = new AdminResource(config, runtimeConfiguration.getScheduler());
-      var metrics = new MetricsResource(resources, runtimeConfiguration);
+      var admin = new AdminResource(config, runtime.getScheduler());
+      var metrics = new MetricsResource(resources, runtime);
 
-      JavalinJackson.configure(runtimeConfiguration.getObjectMapper());
+      JavalinJackson.configure(runtime.getObjectMapper());
 
-      Javalin app = Javalin
-         .create(cfg -> {
-            cfg.showJavalinBanner = false;
-            cfg.registerPlugin(AlpakkeerOpenApi.apply(config));
-            cfg.enableCorsForAllOrigins();
-         })
-
+      runtime.getApp()
          // Jobs
          .get("/api/v1/jobs", jobs.getJobs())
          .get("/api/v1/jobs/:name", jobs.getJob())
-         .options("/api/v1/jobs/:name", jobs.getTriggerJobExample())
+         .get("/api/v1/jobs/:name/sample", jobs.getTriggerJobExample())
          .post("/api/v1/jobs/:name", jobs.triggerJob())
          .delete("/api/v1/jobs/:name", jobs.stop())
 
@@ -56,12 +50,9 @@ public final class AlpakkeerAPI {
 
          // Admin
          .get("/api/v1/about", admin.getAbout())
-         .get("/api/v1/admin/crontab", admin.getJobs())
+         .get("/api/v1/admin/crontab", admin.getJobs());
 
-         // run ...
-         .start(config.getApi().getHostname(), config.getApi().getPort());
-
-      return AlpakkeerAPI.apply(app);
+      return AlpakkeerAPI.apply(runtime.getApp());
    }
 
    public void stop() {

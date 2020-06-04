@@ -2,7 +2,7 @@ package alpakkeer.core.jobs.actor.states;
 
 import akka.actor.typed.javadsl.ActorContext;
 import alpakkeer.core.jobs.actor.context.Context;
-import alpakkeer.core.jobs.actor.context.CurrentExecution;
+import alpakkeer.core.jobs.actor.context.CurrentExecutionInternal;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
 import com.google.common.collect.Lists;
@@ -11,14 +11,14 @@ import java.util.List;
 
 public final class Starting<P, C> extends State<P, C> {
 
-   private final CurrentExecution<P> currentExecution;
+   private final CurrentExecutionInternal<P, C> currentExecution;
 
    private final List<Stop<P, C>> stopRequests;
 
    private Starting(
       ActorContext<Message<P, C>> actor,
       Context<P, C> context,
-      CurrentExecution<P> currentExecution,
+      CurrentExecutionInternal<P, C> currentExecution,
       List<Stop<P, C>> stopRequests) {
 
       super(JobState.RUNNING, actor, context);
@@ -29,7 +29,7 @@ public final class Starting<P, C> extends State<P, C> {
    public static <P, C> Starting<P, C> apply(
       ActorContext<Message<P, C>> actor,
       Context<P, C> context,
-      CurrentExecution<P> currentExecution) {
+      CurrentExecutionInternal<P, C> currentExecution) {
 
       return new Starting<>(actor, context, currentExecution, Lists.newArrayList());
    }
@@ -49,7 +49,13 @@ public final class Starting<P, C> extends State<P, C> {
    @Override
    public State<P, C> onFailed(Failed<P, C> failed) {
       log.warn("An exception occurred while starting job", failed.getException());
-      context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
+
+      context.getJobDefinition().getMonitors().onFailed(
+         currentExecution.getCurrentExecution().getId(),
+         failed.getException());
+
+      currentExecution.getCompletableFuture().completeExceptionally(failed.getException());
+
       return processQueue();
    }
 
@@ -61,7 +67,8 @@ public final class Starting<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onStarted(Started<P, C> started) {
-      context.getJobDefinition().getMonitors().onStarted(currentExecution.getId());
+      context.getJobDefinition().getMonitors().onStarted(
+         currentExecution.getCurrentExecution().getId());
 
       started.getHandle().getCompletion().whenComplete((done, exception) -> {
          if (exception != null) {
@@ -72,7 +79,8 @@ public final class Starting<P, C> extends State<P, C> {
       });
 
       stopRequests.forEach(actor.getSelf()::tell);
-      return Running.apply(actor, context, currentExecution, started.getHandle());
+      return Running.apply(
+         actor, context, currentExecution, started.getHandle());
    }
 
    @Override

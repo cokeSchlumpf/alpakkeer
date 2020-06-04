@@ -3,6 +3,7 @@ package alpakkeer.core.processes;
 import akka.japi.Pair;
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
+import akka.japi.function.Procedure2;
 import akka.stream.UniqueKillSwitch;
 import akka.stream.javadsl.RunnableGraph;
 import alpakkeer.config.RuntimeConfiguration;
@@ -13,11 +14,14 @@ import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
 import alpakkeer.core.values.Name;
+import com.google.common.collect.Lists;
+import io.javalin.Javalin;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -90,6 +94,8 @@ public final class ProcessDefinitions {
 
       private final ProcessMonitorGroup monitors;
 
+      private List<Procedure2<Javalin, Process>> apiExtensions;
+
       public static ProcessDefinitionBuilder apply(String name, ProcessRunner runner) {
          var logger = LoggerFactory.getLogger(String.format(
             "alpakkeer.processes.%s",
@@ -97,13 +103,14 @@ public final class ProcessDefinitions {
 
          return apply(
             name, runner, Duration.ofSeconds(10), Duration.ofMinutes(10),
-            Duration.ofMinutes(1), logger, true, ProcessMonitorGroup.apply());
+            Duration.ofMinutes(1), logger, true, ProcessMonitorGroup.apply(),
+            Lists.newArrayList());
       }
 
       public ProcessDefinition build() {
          return SimpleProcessDefinition.apply(
             name, initialRetryBackoff, completionRestartBackoff, retryBackoffResetTimeout, runner,
-            logger, initiallyStarted, monitors);
+            logger, initiallyStarted, monitors, apiExtensions);
       }
 
       public ProcessDefinitionBuilder initializeStarted() {
@@ -113,6 +120,11 @@ public final class ProcessDefinitions {
 
       public ProcessDefinitionBuilder initializeStopped() {
          this.initiallyStarted = false;
+         return this;
+      }
+
+      public ProcessDefinitionBuilder withApiEndpoint(Procedure2<Javalin, Process> apiExtension) {
+         apiExtensions.add(apiExtension);
          return this;
       }
 
@@ -161,6 +173,13 @@ public final class ProcessDefinitions {
 
       private final ProcessMonitorGroup monitors;
 
+      private final List<Procedure2<Javalin, Process>> apiExtensions;
+
+      @Override
+      public void extendApi(Javalin api, Process processInstance) {
+         apiExtensions.forEach(ext -> Operators.suppressExceptions(() -> ext.apply(api, processInstance)));
+      }
+
       @Override
       public boolean isInitiallyStarted() {
          return initiallyStarted;
@@ -205,6 +224,10 @@ public final class ProcessDefinitions {
 
    public ProcessRunnableBuilder create(String name) {
       return ProcessRunnableBuilder.apply(name, runtimeConfiguration, sb);
+   }
+
+   public RuntimeConfiguration getRuntime() {
+      return runtimeConfiguration;
    }
 
 }

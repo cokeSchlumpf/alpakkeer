@@ -1,5 +1,6 @@
 package alpakkeer.core.jobs;
 
+import akka.Done;
 import akka.japi.function.Function2;
 import akka.japi.function.Function3;
 import akka.japi.function.Function4;
@@ -16,10 +17,13 @@ import alpakkeer.core.values.Name;
 import alpakkeer.core.values.Nothing;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import io.javalin.Javalin;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.compat.java8.FutureConverters;
+import scala.concurrent.Future;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,8 +43,8 @@ public final class JobDefinitions {
 
       private final C initialContext;
 
-      public static JobTypeConfiguration<Nothing, Nothing> apply() {
-         return apply(Nothing.getInstance(), Nothing.getInstance());
+      public static JobTypeConfiguration<Nothing, Done> apply() {
+         return apply(Nothing.getInstance(), Done.getInstance());
       }
 
       public <T> JobTypeConfiguration<T, C> withDefaultProperties(T defaultProperties) {
@@ -87,11 +91,19 @@ public final class JobDefinitions {
          return runCS((s, p, c) -> Operators.suppressExceptions(() -> run.apply(s, p, c)).run(runtimeConfiguration.getSystem()));
       }
 
+      public JobSettingsConfiguration<P, C> runScalaGraph(Function3<String, P, C, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
+         return runGraph((s, p, c) -> run.apply(s, p, c).mapMaterializedValue(FutureConverters::<C>toJava).asJava());
+      }
+
       public JobSettingsConfiguration<P, C> runGraph(Function4<String, P, C, StreamBuilder, RunnableGraph<CompletionStage<C>>> run) {
          return runGraph((s, p, c) -> {
             var sb = JobStreamBuilder.apply(monitors, s);
             return run.apply(s, p, c, sb);
          });
+      }
+
+      public JobSettingsConfiguration<P, C> runScalaGraph(Function4<String, P, C, StreamBuilder, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
+         return runGraph((s, p, c, sb) -> run.apply(s, p, c, sb).mapMaterializedValue(FutureConverters::<C>toJava).asJava());
       }
 
       public JobSettingsConfiguration<P, C> run(Function3<String, P, C, C> run) {
@@ -104,6 +116,10 @@ public final class JobDefinitions {
 
       public JobSettingsConfiguration<P, C> runGraph(Function2<String, P, RunnableGraph<CompletionStage<C>>> run) {
          return runGraph((s, p, c) -> run.apply(s, p));
+      }
+
+      public JobSettingsConfiguration<P, C> runScalaGraph(Function2<String, P, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
+         return runGraph((s, p) -> run.apply(s, p).mapMaterializedValue(FutureConverters::<C>toJava).asJava());
       }
 
       public JobSettingsConfiguration<P, C> run(Procedure2<String, P> run) {
@@ -133,6 +149,8 @@ public final class JobDefinitions {
 
       private List<ScheduleExecution<P>> scheduleExecutions;
 
+      private List<Procedure2<Javalin, Job<P, C>>> apiExtensions;
+
       private Logger logger;
 
       public static <P, C> JobSettingsConfiguration<P, C> apply(
@@ -143,16 +161,20 @@ public final class JobDefinitions {
             "alpakkeer.jobs.%s",
             Strings.convert(name.getValue()).toSnakeCase()));
 
-         return apply(name, runtimeConfiguration, jobTypes, run, monitors, Lists.newArrayList(), logger);
+         return apply(
+            name, runtimeConfiguration, jobTypes, run, monitors,
+            Lists.newArrayList(), Lists.newArrayList(), logger);
       }
 
       public JobDefinition<P, C> build() {
-         return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors);
+         return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions);
       }
 
-      /*
-       * Monitors
-       */
+      public JobSettingsConfiguration<P, C> withApiEndpoint(Procedure2<Javalin, Job<P, C>> apiExtension) {
+         apiExtensions.add(apiExtension);
+         return this;
+      }
+
       public JobSettingsConfiguration<P, C> withHistoryMonitor() {
          return withHistoryMonitor(10);
       }
@@ -214,6 +236,13 @@ public final class JobDefinitions {
 
       private final JobMonitorGroup<P, C> monitors;
 
+      private final List<Procedure2<Javalin, Job<P, C>>> apiExtensions;
+
+      @Override
+      public void extendApi(Javalin api, Job<P, C> jobInstance) {
+         apiExtensions.forEach(ext -> Operators.suppressExceptions(() -> ext.apply(api, jobInstance)));
+      }
+
       @Override
       public P getDefaultProperties() {
          return jobTypes.defaultProperties;
@@ -251,7 +280,7 @@ public final class JobDefinitions {
 
    }
 
-   public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Nothing>, JobTypeConfiguration<P, C>> cfg) {
+   public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Done>, JobTypeConfiguration<P, C>> cfg) {
       return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
    }
 
@@ -259,12 +288,16 @@ public final class JobDefinitions {
       return create(name, cfg -> JobTypeConfiguration.apply(defaultProperties, initialContext));
    }
 
-   public <P> JobRunnableConfiguration<P, Nothing> create(String name, P defaultProperties) {
-      return create(name, defaultProperties, Nothing.getInstance());
+   public <P> JobRunnableConfiguration<P, Done> create(String name, P defaultProperties) {
+      return create(name, defaultProperties, Done.getInstance());
    }
 
-   public JobRunnableConfiguration<Nothing, Nothing> create(String name) {
+   public JobRunnableConfiguration<Nothing, Done> create(String name) {
       return create(name, Nothing.getInstance());
+   }
+
+   public RuntimeConfiguration getRuntime() {
+      return runtimeConfiguration;
    }
 
 }

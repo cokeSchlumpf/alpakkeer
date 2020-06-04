@@ -1,7 +1,5 @@
 package alpakkeer.samples;
 
-import akka.Done;
-import akka.japi.function.Function;
 import alpakkeer.Alpakkeer;
 import alpakkeer.core.jobs.ContextStores;
 import alpakkeer.core.monitoring.MetricCollectors;
@@ -13,9 +11,9 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Value;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletionStage;
 
 public class SampleApplication {
 
@@ -27,6 +25,7 @@ public class SampleApplication {
    }
 
    public static void main(String... args) {
+      System.out.println(new File(".").getAbsolutePath());
       var alpakkeer = Alpakkeer
          .create()
          .configure(cfg -> {
@@ -41,6 +40,11 @@ public class SampleApplication {
                .mapMaterializedValue(maybeDone -> maybeDone.thenApply(d -> LocalDateTime.now())))
             // .withHistoryMonitor(100)
             .withPrometheusMonitor()
+            .withApiEndpoint((app, job) -> {
+               app.get("test", ctx -> {
+                  ctx.json("Hello World");
+               });
+            })
             .withScheduledExecution(CronExpression.everyMinute())
             .build())
          .start();

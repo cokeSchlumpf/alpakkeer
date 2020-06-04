@@ -3,34 +3,44 @@ package alpakkeer.core.jobs.actor.states;
 import akka.actor.typed.javadsl.ActorContext;
 import alpakkeer.core.jobs.JobHandle;
 import alpakkeer.core.jobs.actor.context.Context;
-import alpakkeer.core.jobs.actor.context.CurrentExecution;
+import alpakkeer.core.jobs.actor.context.CurrentExecutionInternal;
+import alpakkeer.core.jobs.model.CurrentExecution;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
 
+import java.util.NoSuchElementException;
+
 public final class Running<P, C> extends State<P, C> {
 
-   private final CurrentExecution<P> currentExecution;
+   private final CurrentExecutionInternal<P, C> currentExecution;
 
    private final JobHandle<C> handle;
 
-   private Running(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle<C> handle) {
+   private Running(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecutionInternal<P, C> currentExecution, JobHandle<C> handle) {
       super(JobState.RUNNING, actor, context);
       this.currentExecution = currentExecution;
       this.handle = handle;
    }
 
-   public static <P, C> Running<P, C> apply(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecution<P> currentExecution, JobHandle<C> handle) {
+   public static <P, C> Running<P, C> apply(ActorContext<Message<P, C>> actor, Context<P, C> context, CurrentExecutionInternal<P, C> currentExecution, JobHandle<C> handle) {
       return new Running<>(actor, context, currentExecution, handle);
    }
 
    @Override
    public State<P, C> onCompleted(Completed<P, C> completed) {
       if (completed.getResult().isPresent()) {
-         context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId(), completed.getResult().get());
+         context.getJobDefinition().getMonitors().onCompleted(currentExecution.getCurrentExecution().getId(), completed.getResult().get());
          setCurrentContext(completed.getResult().get());
-         return Finalizing.apply(state, actor, context);
+         return Finalizing.apply(state, actor, context, currentExecution, completed.getResult().get());
       } else {
-         context.getJobDefinition().getMonitors().onCompleted(currentExecution.getId());
+         var ex = new NoSuchElementException(String.format(
+            "Job `%s` did not return a result in execution `%s`",
+            context.getJobDefinition().getName().getValue(),
+            currentExecution.getCurrentExecution().getId()));
+
+         context.getJobDefinition().getMonitors().onCompleted(currentExecution.getCurrentExecution().getId());
+         currentExecution.getCompletableFuture().completeExceptionally(ex);
+
          return processQueue();
       }
    }
@@ -43,7 +53,9 @@ public final class Running<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onFailed(Failed<P, C> failed) {
-      context.getJobDefinition().getMonitors().onFailed(currentExecution.getId(), failed.getException());
+      context.getJobDefinition().getMonitors().onFailed(currentExecution.getCurrentExecution().getId(), failed.getException());
+      currentExecution.getCompletableFuture().completeExceptionally(failed.getException());
+
       return processQueue();
    }
 
@@ -61,7 +73,7 @@ public final class Running<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onStop(Stop<P, C> stop) {
-      log.info("Received request to stop job execution `{}`", currentExecution.getId());
+      log.info("Received request to stop job execution `{}`", currentExecution.getCurrentExecution().getId());
 
       handle.stop();
       if (stop.isClearQueue()) context.getQueue().clear();

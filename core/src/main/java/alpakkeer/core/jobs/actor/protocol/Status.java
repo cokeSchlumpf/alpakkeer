@@ -9,6 +9,6 @@ import lombok.Value;
 @AllArgsConstructor(staticName = "apply")
 public class Status<P, C> implements Message<P, C> {
 
-   ActorRef<JobStatus<P, C>> replyTo;
+   ActorRef<JobStatus> replyTo;
 
 }

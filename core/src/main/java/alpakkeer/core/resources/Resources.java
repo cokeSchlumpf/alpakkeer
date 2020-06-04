@@ -1,7 +1,6 @@
 package alpakkeer.core.resources;
 
-import akka.actor.ActorSystem;
-import alpakkeer.core.jobs.ContextStore;
+import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.jobs.Job;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.Jobs;
@@ -10,7 +9,6 @@ import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.processes.Process;
 import alpakkeer.core.processes.ProcessDefinition;
 import alpakkeer.core.processes.Processes;
-import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.values.Name;
 import com.google.common.collect.Maps;
 import lombok.AccessLevel;
@@ -23,13 +21,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Resources {
+public final class Resources {
 
-   private final ActorSystem system;
-
-   private final CronScheduler scheduler;
-
-   private final ContextStore contextStore;
+   private final RuntimeConfiguration runtime;
 
    private final Map<Name, Job<?, ?>> jobs;
 
@@ -37,15 +31,16 @@ public class Resources {
 
    private final Map<String, MetricStore<TimeSeries>> tsMetrics;
 
-   public static Resources apply(ActorSystem system, CronScheduler scheduler, ContextStore contextStore) {
-      return new Resources(system, scheduler, contextStore, Maps.newHashMap(), Maps.newHashMap(), Maps.newHashMap());
+   public static Resources apply(RuntimeConfiguration runtime) {
+      return new Resources(runtime, Maps.newHashMap(), Maps.newHashMap(), Maps.newHashMap());
    }
 
    public <P, C> Job<P, C> addJob(JobDefinition<P, C> jobDefinition) {
       if (jobs.containsKey(jobDefinition.getName())) {
          throw JobAlreadyExistsException.apply(jobDefinition.getName());
       } else {
-         var job = Jobs.apply(system, scheduler, contextStore, jobDefinition);
+         var job = Jobs.apply(runtime.getSystem(), runtime.getScheduler(), runtime.getContextStore(), jobDefinition);
+         job.getDefinition().extendApi(runtime.getApp(), job);
          jobs.put(jobDefinition.getName(), job);
          return job;
       }
@@ -59,7 +54,8 @@ public class Resources {
       if (processes.containsKey(processDefinition.getName().getValue())) {
          throw ProcessAlreadyExistsException.apply(processDefinition.getName());
       } else {
-         var process = Processes.apply(system, processDefinition);
+         var process = Processes.apply(runtime.getSystem(), processDefinition);
+         process.getDefinition().extendApi(runtime.getApp(), process);
          processes.put(processDefinition.getName().getValue(), process);
          return process;
       }

@@ -41,7 +41,7 @@ public final class Jobs {
       }
 
       @Override
-      public CompletionStage<Done> start(P properties, Boolean queue) {
+      public CompletionStage<CompletionStage<C>> start(P properties, Boolean queue) {
          return patterns.ask(actor, (replyTo, errorTo) -> Start.apply(queue, properties, replyTo, errorTo));
       }
 
@@ -56,7 +56,7 @@ public final class Jobs {
       }
 
       @Override
-      public CompletionStage<JobStatus<P, C>> getStatus() {
+      public CompletionStage<JobStatus> getStatus() {
          return patterns.ask(actor, Status::apply);
       }
 

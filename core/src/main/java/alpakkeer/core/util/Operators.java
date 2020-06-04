@@ -43,8 +43,11 @@ public final class Operators {
    }
 
    public static <T> CompletionStage<List<T>> allOf(List<CompletionStage<T>> futures) {
-      AtomicReference<List<T>> results = new AtomicReference<>(new ArrayList<>());
+      if (futures.isEmpty()) {
+         return CompletableFuture.completedFuture(List.of());
+      }
 
+      AtomicReference<List<T>> results = new AtomicReference<>(new ArrayList<>());
       CompletableFuture<List<T>> result = new CompletableFuture<>();
 
       futures.forEach(f -> {

@@ -3,17 +3,30 @@ package alpakkeer.core.jobs.actor.states;
 import akka.Done;
 import akka.actor.typed.javadsl.ActorContext;
 import alpakkeer.core.jobs.actor.context.Context;
+import alpakkeer.core.jobs.actor.context.CurrentExecutionInternal;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
 
 public final class Finalizing<P, C> extends State<P, C> {
 
-   private Finalizing(JobState state, ActorContext<Message<P, C>> actor, Context<P, C> context) {
+   private final CurrentExecutionInternal<P, C> currentExecution;
+
+   private final C result;
+
+   private Finalizing(
+      JobState state, ActorContext<Message<P, C>> actor, Context<P, C> context,
+      CurrentExecutionInternal<P, C> currentExecution, C result) {
+
       super(state, actor, context);
+      this.currentExecution = currentExecution;
+      this.result = result;
    }
 
-   public static <P, C> Finalizing<P, C> apply(JobState state, ActorContext<Message<P, C>> actor, Context<P, C> context) {
-      return new Finalizing<>(state, actor, context);
+   public static <P, C> Finalizing<P, C> apply(
+      JobState state, ActorContext<Message<P, C>> actor, Context<P, C> context,
+      CurrentExecutionInternal<P, C> currentExecution, C result) {
+
+      return new Finalizing<>(state, actor, context, currentExecution, result);
    }
 
    @Override
@@ -24,6 +37,7 @@ public final class Finalizing<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onFinalized(Finalized<P, C> finalized) {
+      currentExecution.getCompletableFuture().complete(result);
       return processQueue();
    }
 

@@ -1,6 +1,7 @@
 package alpakkeer.config;
 
 import akka.actor.ActorSystem;
+import alpakkeer.api.AlpakkeerOpenApi;
 import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.jobs.ContextStores;
 import alpakkeer.core.monitoring.MetricsCollector;
@@ -9,6 +10,7 @@ import alpakkeer.core.scheduler.CronSchedulers;
 import alpakkeer.core.util.ObjectMapperFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import io.javalin.Javalin;
 import io.prometheus.client.CollectorRegistry;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,6 +20,8 @@ import java.util.Optional;
 
 @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
 public class RuntimeConfigurationBuilder {
+
+   Javalin app;
 
    ActorSystem system;
 
@@ -32,11 +36,16 @@ public class RuntimeConfigurationBuilder {
    CronScheduler scheduler;
 
    public static RuntimeConfigurationBuilder apply() {
-      return apply(null, null, null, null, Lists.newArrayList(), null);
+      return apply(null, null, null, null, null, Lists.newArrayList(), null);
    }
 
    public RuntimeConfigurationBuilder addMetricsCollector(MetricsCollector collector) {
       metricsCollectors.add(collector);
+      return this;
+   }
+
+   public RuntimeConfigurationBuilder withJavalinApp(Javalin app) {
+      this.app = app;
       return this;
    }
 
@@ -65,8 +74,16 @@ public class RuntimeConfigurationBuilder {
       return this;
    }
 
-   public RuntimeConfiguration build() {
+   public RuntimeConfiguration build(AlpakkeerConfiguration config) {
       return RuntimeConfiguration.apply(
+         Optional.ofNullable(app).orElseGet(() -> Javalin
+            .create(cfg -> {
+               cfg.showJavalinBanner = false;
+               cfg.registerPlugin(AlpakkeerOpenApi.apply(config));
+               cfg.enableCorsForAllOrigins();
+            })
+            .start(config.getApi().getHostname(), config.getApi().getPort())),
+         config,
          Optional.ofNullable(system).orElseGet(() -> ActorSystem.apply("alpakkeer")),
          Optional.ofNullable(objectMapper).orElseGet(() -> ObjectMapperFactory.apply().create(true)),
          Optional.ofNullable(collectorRegistry).orElse(CollectorRegistry.defaultRegistry),

@@ -1,22 +1,22 @@
 package alpakkeer.core.jobs.actor.states;
 
-import akka.Done;
 import akka.actor.typed.javadsl.ActorContext;
 import alpakkeer.core.jobs.actor.context.Context;
-import alpakkeer.core.jobs.actor.context.CurrentExecution;
+import alpakkeer.core.jobs.actor.context.CurrentExecutionInternal;
+import alpakkeer.core.jobs.actor.context.QueuedExecutionInternal;
 import alpakkeer.core.jobs.actor.context.ScheduledExecutionReference;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.exceptions.AlreadyRunningException;
 import alpakkeer.core.jobs.model.*;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.values.Name;
-import com.google.common.collect.ImmutableList;
 import org.slf4j.Logger;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 public abstract class State<P, C> {
 
@@ -90,7 +90,7 @@ public abstract class State<P, C> {
       context.getSchedule().thenAccept(schedule -> {
          var result = JobStatus.apply(
             context.getJobDefinition().getName().getValue(),
-            state, (C) null, ImmutableList.copyOf(context.getQueue()), schedule); // TODO: Set context
+            state, context.getQueue().size());
 
          status.getReplyTo().tell(result);
       });
@@ -102,13 +102,14 @@ public abstract class State<P, C> {
             context.getSchedule(),
             context.getJobDefinition().getMonitors().getStatus(),
             getCurrentContext(),
-            (schedule, details, ctx) -> {
-               var jobStatus = JobStatus.apply(
-                  context.getJobDefinition().getName().getValue(),
-                  state, ctx, List.copyOf(context.getQueue()), schedule);
-
-               return JobStatusDetails.apply(jobStatus, details.orElse(null));
-            })
+            (schedule, details, ctx) -> JobStatusDetails.apply(
+               context.getJobDefinition().getName().getValue(),
+               state,
+               ctx,
+               null,
+               context.getQueue().stream().map(QueuedExecutionInternal::getQueuedExecution).collect(Collectors.toList()),
+               schedule,
+               details.orElse(null)))
          .whenComplete((details, ex) -> {
             if (ex != null) {
                log.warn(
@@ -151,12 +152,14 @@ public abstract class State<P, C> {
    }
 
    protected void queue(Start<P, C> start) {
-      if (!start.isQueue()) {
+      if (!start.isQueue() && !context.getQueue().isEmpty()) {
          start.getErrorTo().tell(AlreadyRunningException.apply(context.getJobDefinition().getName()));
       } else {
-         context.getQueue().add(QueuedExecution.apply(start.getProperties()));
+         var queuedExecution = QueuedExecution.apply(start.getProperties());
+         var queuedExecutionInternal = QueuedExecutionInternal.apply(queuedExecution, new CompletableFuture<C>());
+         context.getQueue().add(queuedExecutionInternal);
          context.getJobDefinition().getMonitors().onQueued(context.getQueue().size());
-         start.getReplyTo().tell(Done.getInstance());
+         start.getReplyTo().tell(queuedExecutionInternal.getMaybeResult());
       }
    }
 
@@ -166,7 +169,9 @@ public abstract class State<P, C> {
       } else {
          var execution = context.getQueue().remove(0);
          var eventualHandle = getCurrentContext().thenCompose(
-            ctx -> context.getJobDefinition().run(execution.getId(), execution.getProperties(), ctx));
+            ctx -> context.getJobDefinition().run(
+               execution.getQueuedExecution().getId(),
+               execution.getQueuedExecution().getProperties(), ctx));
 
          eventualHandle.whenComplete((handle, ex) -> {
             if (ex != null) {
@@ -177,10 +182,18 @@ public abstract class State<P, C> {
          });
 
          context.getJobDefinition().getMonitors().onEnqueued(context.getQueue().size());
-         context.getJobDefinition().getMonitors().onTriggered(execution.getId(), execution.getProperties());
+         context.getJobDefinition().getMonitors().onTriggered(
+            execution.getQueuedExecution().getId(),
+            execution.getQueuedExecution().getProperties());
 
-         var current = CurrentExecution.apply(execution.getId(), execution.getProperties(), LocalDateTime.now());
-         return Starting.apply(actor, context, current);
+         var current = CurrentExecution.apply(
+            execution.getQueuedExecution().getId(),
+            execution.getQueuedExecution().getProperties(),
+            LocalDateTime.now());
+
+         var currentInternal = CurrentExecutionInternal.apply(current, execution.getMaybeResult());
+
+         return Starting.apply(actor, context, currentInternal);
       }
    }
 

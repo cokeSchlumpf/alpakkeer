@@ -1,9 +1,10 @@
 package alpakkeer.core.jobs.actor.protocol;
 
-import akka.Done;
 import akka.actor.typed.ActorRef;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+
+import java.util.concurrent.CompletionStage;
 
 @Value
 @AllArgsConstructor(staticName = "apply")
@@ -13,7 +14,7 @@ public class Start<P, C> implements Message<P, C> {
 
    P properties;
 
-   ActorRef<Done> replyTo;
+   ActorRef<CompletionStage<C>> replyTo;
 
    ActorRef<Throwable> errorTo;
 

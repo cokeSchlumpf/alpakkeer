@@ -39,8 +39,7 @@ public final class Idle<P, C> extends State<P, C> {
 
    @Override
    public State<P, C> onStart(Start<P, C> start) {
-      start.getReplyTo().tell(Done.getInstance());
-      context.getQueue().add(QueuedExecution.apply(start.getProperties()));
+      queue(start);
       return processQueue();
    }
 

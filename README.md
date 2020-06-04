@@ -4,6 +4,8 @@
 
 Alpakkeer is an opinionated toolkit to build, run and monitor light-weight integration applications (not necessarily) based on [Akka Streams](https://doc.akka.io/docs/akka/current/stream/index.html) and [Alpakka](https://doc.akka.io/docs/alpakka/current/index.html). 
 
+Alpakkeer can be used with a Java or a Scala DSL.
+
 ```java
 public class HelloWorld {
    public static void main(String[] args) {
@@ -37,9 +39,7 @@ Alpakkeer bundles various libraries and components to quickly build, run and ope
 
 * Prometheus Client to record application and stream metrics. Alpakkeer also provides custom FlowStages to argument your stream with Akka Streams specific metrics. [More Details ...](#)
 
-All components are made simply composable and accessible via an easy to use Java* DSL. Most components can also be easily replaced with different implementations or extended with custom logic.
-
-<sup>\* Alpakkeer is intended to be used with Java. Although not intended, the DSL can be used with Scala 2.13 as well, Scala 2.12 is not supported. An adapted Scala DSL is not planned yet.</sup>
+All components are made simply composable and accessible via an easy to use DSL for Java or Scala. Most components can also be easily replaced with different implementations or extended with custom logic.
 
 ## Use Cases
 
