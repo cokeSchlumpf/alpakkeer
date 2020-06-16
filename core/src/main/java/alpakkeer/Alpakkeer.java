@@ -18,27 +18,31 @@ public final class Alpakkeer {
 
    private final RuntimeConfiguration runtimeConfiguration;
 
+   private final Resources resources;
+
    private final AlpakkeerAPI api;
 
    static Alpakkeer apply(AlpakkeerConfiguration config, RuntimeConfiguration runtimeConfiguration, Resources resources) {
       var api = AlpakkeerAPI.apply(config, runtimeConfiguration, resources);
 
-      var banner = Templates.renderTemplateFromResources("banner.twig", ImmutableMap.<String, Object>builder()
-         .put("version", config.getVersion())
-         .put("environment", config.getEnvironment())
-         .build());
+      if (runtimeConfiguration.getConfiguration().isShowBanner()) {
+         var banner = Templates.renderTemplateFromResources("banner.twig", ImmutableMap.<String, Object>builder()
+            .put("version", config.getVersion())
+            .put("environment", config.getEnvironment())
+            .build());
 
-      LOG.info(banner);
+         LOG.info(banner);
+      }
 
-      return new Alpakkeer(runtimeConfiguration, api);
+      return new Alpakkeer(runtimeConfiguration, resources, api);
    }
 
    public static AlpakkeerBuilder create() {
       return AlpakkeerBuilder.apply();
    }
 
-   public static void main(String... args) {
-
+   public Resources getResources() {
+      return resources;
    }
 
    public void stop() {

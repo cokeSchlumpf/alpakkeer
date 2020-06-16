@@ -2,6 +2,7 @@ package alpakkeer.config;
 
 import alpakkeer.core.config.Configs;
 import alpakkeer.core.config.annotations.ConfigurationProperties;
+import alpakkeer.core.config.annotations.Value;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +19,9 @@ public final class AlpakkeerConfiguration {
    private final String environment;
 
    private final String version;
+
+   @Value("show-banner")
+   private final boolean showBanner;
 
    private final ServerConfiguration api;
 
