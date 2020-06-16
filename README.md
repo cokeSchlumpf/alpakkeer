@@ -48,3 +48,12 @@ All components are made simply composable and accessible via an easy to use DSL 
 ## Contribute
 
 ## License
+
+## Building the Documentation
+
+The documentation is based on [MkDocs](https://www.mkdocs.org/) and [MkDocs Material](https://github.com/squidfunk/mkdocs-material). To build and run the documentation Python is required.
+
+```bash
+pip install mkdocs mkdocs-material
+mkdocs gh-deploy
+```
