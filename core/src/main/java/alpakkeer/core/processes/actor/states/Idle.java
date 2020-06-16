@@ -36,8 +36,8 @@ public final class Idle extends State {
    @Override
    public State onStart(Start start) {
       context.getScheduler().cancelAll();
-      this.start();
-      return Starting.apply(context, start, context.getDefinition().getInitialRetryBackoff());
+      var executionId = this.start();
+      return Starting.apply(context, start, context.getDefinition().getInitialRetryBackoff(), executionId);
    }
 
    @Override

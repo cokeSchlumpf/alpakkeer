@@ -1,5 +1,7 @@
 package alpakkeer.core.processes;
 
+import akka.Done;
+import akka.japi.Creator;
 import akka.japi.Pair;
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
@@ -57,19 +59,23 @@ public final class ProcessDefinitions {
          return runCancellable(s -> ProcessHandles.createFromCS(run.apply(s)));
       }
 
-      public ProcessDefinitionBuilder runGraph(Function2<String, StreamBuilder, RunnableGraph<CompletionStage<?>>> graph) {
+      public ProcessDefinitionBuilder runGraph(Function2<String, StreamBuilder, RunnableGraph<CompletionStage<Done>>> graph) {
          return runCS(s -> graph.apply(s, sb).run(runtimeConfiguration.getSystem()));
       }
 
-      public ProcessDefinitionBuilder runGraph(Function<StreamBuilder, RunnableGraph<CompletionStage<?>>> graph) {
+      public ProcessDefinitionBuilder runGraph(Function<StreamBuilder, RunnableGraph<CompletionStage<Done>>> graph) {
          return runGraph((s, sb) -> graph.apply(sb));
       }
 
-      public ProcessDefinitionBuilder runCancellableGraph(Function2<String, StreamBuilder, RunnableGraph<Pair<UniqueKillSwitch, CompletionStage<?>>>> graph) {
+      public ProcessDefinitionBuilder runGraph(Creator<RunnableGraph<CompletionStage<Done>>> graph) {
+         return runGraph((s, sb) -> graph.create());
+      }
+
+      public ProcessDefinitionBuilder runCancellableGraph(Function2<String, StreamBuilder, RunnableGraph<Pair<UniqueKillSwitch, CompletionStage<Done>>>> graph) {
          return runCancellable(s -> ProcessHandles.createFromCancellableGraph(graph.apply(s, sb).run(runtimeConfiguration.getSystem())));
       }
 
-      public ProcessDefinitionBuilder runCancellableGraph(Function<StreamBuilder, RunnableGraph<Pair<UniqueKillSwitch, CompletionStage<?>>>> graph) {
+      public ProcessDefinitionBuilder runCancellableGraph(Function<StreamBuilder, RunnableGraph<Pair<UniqueKillSwitch, CompletionStage<Done>>>> graph) {
          return runCancellableGraph((s, sb) -> graph.apply(sb));
       }
 

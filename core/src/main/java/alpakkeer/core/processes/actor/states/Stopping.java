@@ -16,18 +16,22 @@ public final class Stopping extends State {
 
    private final List<Stop> stops;
 
-   private Stopping(ProcessContext context, List<Start> starts, List<Stop> stops) {
+   private final String executionId;
+
+   private Stopping(ProcessContext context, List<Start> starts, List<Stop> stops, String executionId) {
       super(ProcessState.STOPPING, context);
       this.starts = starts;
       this.stops = stops;
+      this.executionId = executionId;
    }
 
-   public static Stopping apply(ProcessContext context, Stop cmd) {
-      return new Stopping(context, Lists.newArrayList(), Lists.newArrayList(cmd));
+   public static Stopping apply(ProcessContext context, Stop cmd, String executionId) {
+      return new Stopping(context, Lists.newArrayList(), Lists.newArrayList(cmd), executionId);
    }
 
    @Override
    public State onCompleted(Completed completed) {
+      context.getDefinition().getMonitors().onStopped(executionId);
       stops.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
       starts.forEach(s -> context.getActor().getSelf().tell(s));
       return Stopped.apply(context);
@@ -35,6 +39,10 @@ public final class Stopping extends State {
 
    @Override
    public State onFailed(Failed failed) {
+      context.getLog().warn(String.format(
+         "Process execution `%s` stopped with Exception",
+         executionId), failed.getException());
+      context.getDefinition().getMonitors().onStopped(executionId);
       stops.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
       starts.forEach(s -> context.getActor().getSelf().tell(s));
       return Stopped.apply(context);

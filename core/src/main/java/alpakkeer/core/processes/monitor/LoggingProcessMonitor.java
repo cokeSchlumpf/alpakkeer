@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -33,7 +34,7 @@ public final class LoggingProcessMonitor implements ProcessMonitor {
       log.warn(
          String.format(
             "An exception occurred in execution `%s` of job `%s`, will retry at `%s`",
-            executionId, name, LocalDateTime.from(nextRetry)),
+            executionId, name, LocalDateTime.from(nextRetry.atZone(ZoneId.systemDefault()))),
          cause);
    }
 

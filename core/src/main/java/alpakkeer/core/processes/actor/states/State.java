@@ -33,10 +33,12 @@ public abstract class State {
 
    }
 
-   protected void start() {
+   protected String start() {
+      var executionId = UUID.randomUUID().toString();
+
       context
          .getDefinition()
-         .run(UUID.randomUUID().toString())
+         .run(executionId)
          .whenComplete((handle, ex) -> {
             if (ex != null) {
                context.getActor().getSelf().tell(alpakkeer.core.processes.actor.protocol.Failed.apply(ex));
@@ -44,6 +46,8 @@ public abstract class State {
                context.getActor().getSelf().tell(Started.apply(handle));
             }
          });
+
+      return executionId;
    }
 
 }

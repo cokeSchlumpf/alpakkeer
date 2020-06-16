@@ -30,8 +30,8 @@ public final class Stopped extends State {
 
    @Override
    public State onStart(Start start) {
-      this.start();
-      return Starting.apply(context, start, context.getDefinition().getInitialRetryBackoff());
+      var executionId = this.start();
+      return Starting.apply(context, start, context.getDefinition().getInitialRetryBackoff(), executionId);
    }
 
    @Override

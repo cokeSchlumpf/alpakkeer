@@ -19,20 +19,23 @@ public final class Starting extends State {
 
    private final Duration nextRetryBackOff;
 
+   private final String executionId;
+
    private Starting(
-      ProcessContext context, List<Start> starts, List<Stop> stops, Duration nextRetryBackoff) {
+      ProcessContext context, List<Start> starts, List<Stop> stops, Duration nextRetryBackoff, String executionId) {
 
       super(ProcessState.STARTING, context);
       this.starts = starts;
       this.stops = stops;
       this.nextRetryBackOff = nextRetryBackoff;
+      this.executionId = executionId;
    }
 
-   public static Starting apply(ProcessContext context, Start cmd, Duration nextRetryBackOff) {
+   public static Starting apply(ProcessContext context, Start cmd, Duration nextRetryBackOff, String executionId) {
       var starts = Lists.newArrayList(cmd);
       var stops = Lists.<Stop>newArrayList();
 
-      return new Starting(context, starts, stops, nextRetryBackOff);
+      return new Starting(context, starts, stops, nextRetryBackOff, executionId);
    }
 
    @Override
@@ -49,6 +52,7 @@ public final class Starting extends State {
          context.getActor().getSystem().ignoreRef());
 
       context.getScheduler().startSingleTimer(start, nextRetryBackOff);
+      context.getDefinition().getMonitors().onFailed(executionId, failed.getException(), nextRestart);
       return Failed.apply(context, nextRetryBackOff, nextRestart);
    }
 
@@ -60,6 +64,8 @@ public final class Starting extends State {
 
    @Override
    public State onStarted(Started started) {
+      context.getDefinition().getMonitors().onStarted(executionId);
+
       started.getHandle().getCompletion().whenComplete((done, ex) -> {
          if (ex != null) {
             context.getActor().getSelf().tell(alpakkeer.core.processes.actor.protocol.Failed.apply(ex));
@@ -70,7 +76,7 @@ public final class Starting extends State {
 
       starts.forEach(s -> s.getReplyTo().tell(Done.getInstance()));
       stops.forEach(s -> context.getActor().getSelf().tell(s));
-      return Running.apply(context, nextRetryBackOff, started.getHandle());
+      return Running.apply(context, executionId, nextRetryBackOff, started.getHandle());
    }
 
    @Override

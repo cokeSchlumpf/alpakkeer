@@ -57,7 +57,7 @@ public final class ProcessHandles {
       return SimpleHandle.apply(process);
    }
 
-   public static ProcessHandle createFromCancellableGraph(Pair<UniqueKillSwitch, CompletionStage<?>> mat) {
+   public static ProcessHandle createFromCancellableGraph(Pair<UniqueKillSwitch, CompletionStage<Done>> mat) {
       return KillSwitchHandle.apply(mat.second(), mat.first());
    }
 

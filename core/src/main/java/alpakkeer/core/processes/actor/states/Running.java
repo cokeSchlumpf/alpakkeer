@@ -14,19 +14,22 @@ public final class Running extends State {
 
    private final Duration nextRetryBackoff;
 
+   private final String executionId;
+
    private final ProcessHandle handle;
 
    private final Instant started;
 
-   private Running(ProcessContext context, Duration nextRetryBackoff, ProcessHandle handle, Instant started) {
+   private Running(ProcessContext context, Duration nextRetryBackoff, String executionId, ProcessHandle handle, Instant started) {
       super(ProcessState.RUNNING, context);
       this.nextRetryBackoff = nextRetryBackoff;
       this.handle = handle;
       this.started = started;
+      this.executionId = executionId;
    }
 
-   public static Running apply(ProcessContext context, Duration nextRetryBackoff, ProcessHandle handle) {
-      return new Running(context, nextRetryBackoff, handle, Instant.now());
+   public static Running apply(ProcessContext context, String executionId, Duration nextRetryBackoff, ProcessHandle handle) {
+      return new Running(context, nextRetryBackoff, executionId, handle, Instant.now());
    }
 
    @Override
@@ -34,6 +37,7 @@ public final class Running extends State {
       var start = Start.apply(context.getActor().getSystem().ignoreRef(), context.getActor().getSystem().ignoreRef());
       var nextRestart = Instant.now().plusMillis(context.getDefinition().getCompletionRestartBackoff().toMillis());
       context.getScheduler().startSingleTimer(start, context.getDefinition().getCompletionRestartBackoff());
+      context.getDefinition().getMonitors().onCompletion(executionId, nextRestart);
       return Idle.apply(context, nextRestart);
    }
 
@@ -45,12 +49,18 @@ public final class Running extends State {
       var now = Instant.now().toEpochMilli();
 
       if (now < timout) {
-         context.getScheduler().startSingleTimer(start, nextRetryBackoff);
          var nextRetry = Instant.now().plusMillis(nextRetryBackoff.toMillis());
+
+         context.getScheduler().startSingleTimer(start, nextRetryBackoff);
+         context.getDefinition().getMonitors().onFailed(executionId, failed.getException(), nextRetry);
+
          return Failed.apply(context, nextRetryBackoff, nextRetry);
       } else {
-         context.getScheduler().startSingleTimer(start, context.getDefinition().getInitialRetryBackoff());
          var nextRetry = Instant.now().plusMillis(context.getDefinition().getInitialRetryBackoff().toMillis());
+
+         context.getScheduler().startSingleTimer(start, context.getDefinition().getInitialRetryBackoff());
+         context.getDefinition().getMonitors().onFailed(executionId, failed.getException(), nextRetry);
+
          return Failed.apply(context, nextRetryBackoff, nextRetry);
       }
    }
@@ -70,7 +80,7 @@ public final class Running extends State {
    @Override
    public State onStop(Stop stop) {
       handle.stop();
-      return Stopping.apply(context, stop);
+      return Stopping.apply(context, stop, executionId);
    }
 
    @Override

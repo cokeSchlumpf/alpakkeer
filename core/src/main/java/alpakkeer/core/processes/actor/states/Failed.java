@@ -39,9 +39,9 @@ public final class Failed extends State {
 
    @Override
    public State onStart(Start start) {
-      start();
+      var executionId = start();
       this.context.getScheduler().cancelAll();
-      return Starting.apply(context, start, currentBackoff.multipliedBy(2));
+      return Starting.apply(context, start, currentBackoff.multipliedBy(2), executionId);
    }
 
    @Override
