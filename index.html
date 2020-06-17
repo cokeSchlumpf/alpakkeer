@@ -49,7 +49,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-mkdocs" class="md-skip">
+        <a href="#alpakkeer" class="md-skip">
           Skip to content
         </a>
       
@@ -71,15 +71,8 @@
     </label>
     <div class="md-header-nav__title" data-md-component="header-title">
       
-        <div class="md-header-nav__ellipsis">
-          <span class="md-header-nav__topic md-ellipsis">
-            Alpakkeer
-          </span>
-          <span class="md-header-nav__topic md-ellipsis">
-            
-              Welcome to MkDocs
-            
-          </span>
+        <div class="md-header-nav__ellipsis md-ellipsis">
+          Alpakkeer
         </div>
       
     </div>
@@ -186,14 +179,14 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Welcome to MkDocs
+        Alpakkeer
         <span class="md-nav__icon md-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9h14V7H3v2m0 4h14v-2H3v2m0 4h14v-2H3v2m16 0h2v-2h-2v2m0-10v2h2V7h-2m0 6h2v-2h-2v2z"/></svg>
         </span>
       </label>
     
-    <a href="." title="Welcome to MkDocs" class="md-nav__link md-nav__link--active">
-      Welcome to MkDocs
+    <a href="." title="Alpakkeer" class="md-nav__link md-nav__link--active">
+      Alpakkeer
     </a>
     
       
@@ -212,15 +205,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
-    Commands
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
+  <a href="#license" class="md-nav__link">
+    License
   </a>
   
 </li>
@@ -258,15 +251,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
-    Commands
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
+  <a href="#license" class="md-nav__link">
+    License
   </a>
   
 </li>
@@ -291,21 +284,35 @@
                   
                 
                 
-                <h1 id="welcome-to-mkdocs">Welcome to MkDocs</h1>
-<p>For full documentation visit <a href="https://www.mkdocs.org">mkdocs.org</a>.</p>
-<h2 id="commands">Commands</h2>
+                <h1 id="alpakkeer">Alpakkeer</h1>
+<p><img alt="Alpakkeer Logo" src="assets/logo-text.png" /></p>
+<div style="text-align: center; font-style: italic">
+Build, Run and Operate Akka Streams applications quickly, ready for production.
+</div>
+
+<hr />
+<p><strong>Documentation:</strong> <a href="https://cokeschlumpf.github.io/alpakkeer/">cokeschlumpf.github.io/alpakkeer</a><br />
+<strong>GitHub Repository:</strong> <a href="https://github.com/cokeSchlumpf/alpakkeer">github.com/cokeSchlumpf/alpakkeer</a></p>
+<hr />
+<p>Alpakkeer is an opinionated Java/ Scala toolkit to build, run and operate light-weight integration applications based on <a href="https://doc.akka.io/docs/akka/current/stream/index.html">Akka Streams</a> and <a href="https://doc.akka.io/docs/alpakka/current/index.html">Alpakka</a>.</p>
+<p>Alpakkeer bundles various libraries and components:</p>
 <ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs -h</code> - Print help message and exit.</li>
+<li>
+<p>A Web Server based on <a href="https://javalin.io/">Javalin</a> to provide simple access via REST APIs to manage Akka Streams processes and expose metrics to Prometheus and Grafana.</p>
+</li>
+<li>
+<p>Configuration Management based on <a href="https://github.com/lightbend/config">Lightbend Config</a> including some extensions for environment-based configurations and automatic mapping to POJOs.</p>
+</li>
+<li>
+<p>Prometheus Client to record application and stream metrics. Alpakkeer also provides custom FlowStages to argument your stream with Akka Streams specific metrics. </p>
+</li>
+<li>
+<p>An easy to use DSL for Java and Scala to compose applications.</p>
+</li>
 </ul>
-<h2 id="project-layout">Project layout</h2>
-<pre><code>mkdocs.yml    # The configuration file.
-docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
-</code></pre>
+<h2 id="getting-started">Getting Started</h2>
+<h2 id="license">License</h2>
+<p>This project is licensed under the terms of the Apache 2.0 License.</p>
                 
               
               
