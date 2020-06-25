@@ -2,7 +2,7 @@ package alpakkeer.core.resources;
 
 import alpakkeer.core.values.Name;
 
-public class JobAlreadyExistsException extends RuntimeException {
+public final class JobAlreadyExistsException extends RuntimeException {
 
    private JobAlreadyExistsException(String message) {
       super(message);

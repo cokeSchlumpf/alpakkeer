@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Can be attached to a field to define a different config key for the property.
  *
- * @author Michael Wellner (michael_wellner@rcomext.com).
+ * @author Michael Wellner (michael.wellner@gmail.com).
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

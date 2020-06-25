@@ -20,6 +20,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * The Alpakkeer resource manager controls all existing resources, such as jobs, process, etc.
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Resources {
 
@@ -31,10 +34,24 @@ public final class Resources {
 
    private final Map<String, MetricStore<TimeSeries>> tsMetrics;
 
+   /**
+    * Creates a new instance.
+    *
+    * @param runtime Alpakkeer's runtime configuration.
+    * @return A new resources instance.
+    */
    public static Resources apply(RuntimeConfiguration runtime) {
       return new Resources(runtime, Maps.newHashMap(), Maps.newHashMap(), Maps.newHashMap());
    }
 
+   /**
+    * Adds a new job. The job name must be unique.
+    *
+    * @param jobDefinition The definition of the job
+    * @param <P> The properties type of the job
+    * @param <C> The context type of the job
+    * @return The job instance
+    */
    public <P, C> Job<P, C> addJob(JobDefinition<P, C> jobDefinition) {
       if (jobs.containsKey(jobDefinition.getName())) {
          throw JobAlreadyExistsException.apply(jobDefinition.getName());
@@ -46,10 +63,21 @@ public final class Resources {
       }
    }
 
+   /**
+    * Adds a custom time-series metric for exposure to Grafana, etc.. The name of the metric must be unique.
+    *
+    * @param metric The custom metric definition
+    */
    public void addTimeSeriesMetric(MetricStore<TimeSeries> metric) {
       tsMetrics.put(metric.getName(), metric);
    }
 
+   /**
+    * Adds a process. The name of the process must be unique.
+    *
+    * @param processDefinition The definition of the process
+    * @return The process instance
+    */
    public Process addProcess(ProcessDefinition processDefinition) {
       if (processes.containsKey(processDefinition.getName().getValue())) {
          throw ProcessAlreadyExistsException.apply(processDefinition.getName());
@@ -61,6 +89,39 @@ public final class Resources {
       }
    }
 
+   /**
+    * Like {{@link Resources#findJob(Name)}} but will throw {@link JobNotFoundException} if job is not found.
+    *
+    * @param name The name of the job
+    * @param <P> The property type of the job
+    * @param <C> The context type of the job
+    * @return The job
+    */
+   @SuppressWarnings("unchecked")
+   public <P, C> Job<P, C> getJob(String name) {
+      return (Job<P, C>) findJob(Name.apply(name)).orElseThrow(() -> JobNotFoundException.apply(name));
+   }
+
+   /**
+    * Like {@link Resources#getJob(String)} but with additional type hints.
+    *
+    * @param name The name of the job
+    * @param pType The property type of the job
+    * @param cType The context type of the job
+    * @param <P> The property type
+    * @param <C> The context type
+    * @return The job
+    */
+   @SuppressWarnings("unchecked")
+   public <P, C> Job<P, C> getJob(String name, Class<P> pType, Class<C> cType) {
+      return (Job<P, C>) findJob(Name.apply(name)).orElseThrow(() -> JobNotFoundException.apply(name));
+   }
+
+   /**
+    * Returns a list of registered jobs.
+    *
+    * @return The job list
+    */
    public List<Job<?, ?>> getJobs() {
       return jobs
          .values()
@@ -69,14 +130,30 @@ public final class Resources {
          .collect(Collectors.toList());
    }
 
-   public Optional<Job<?, ?>> getJob(Name name) {
+   /**
+    * Find a job by its name.
+    *
+    * @param name The name of the job
+    * @return Maybe a job or None of not found
+    */
+   public Optional<Job<?, ?>> findJob(Name name) {
       return Optional.ofNullable(jobs.get(name));
    }
 
+   /**
+    * Returns the list of registered time-series metrics.
+    *
+    * @return The list of metrics
+    */
    public List<MetricStore<TimeSeries>> getTimeSeriesMetrics() {
       return List.copyOf(tsMetrics.values());
    }
 
+   /**
+    * Returns a list of registered processes.
+    *
+    * @return The list of processes.
+    */
    public List<Process> getProcesses() {
       return processes
          .values()
@@ -85,7 +162,17 @@ public final class Resources {
          .collect(Collectors.toList());
    }
 
-   public Optional<Process> getProcess(String name) {
+   public Process getProcess(String name) {
+      return findProcess(name).orElseThrow(() -> ProcessNotFoundException.apply(name));
+   }
+
+   /**
+    * Find a process by its name.
+    *
+    * @param name The name of the process
+    * @return Maybe the process or None if the process was not found
+    */
+   public Optional<Process> findProcess(String name) {
       return Optional.ofNullable(processes.get(name));
    }
 

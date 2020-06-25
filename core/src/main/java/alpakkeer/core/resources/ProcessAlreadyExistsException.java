@@ -2,7 +2,7 @@ package alpakkeer.core.resources;
 
 import alpakkeer.core.values.Name;
 
-public class ProcessAlreadyExistsException extends RuntimeException {
+public final class ProcessAlreadyExistsException extends RuntimeException {
 
    private ProcessAlreadyExistsException(String message) {
       super(message);

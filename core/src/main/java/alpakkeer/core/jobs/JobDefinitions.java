@@ -36,6 +36,12 @@ public final class JobDefinitions {
 
    private RuntimeConfiguration runtimeConfiguration;
 
+   /**
+    * A simple builder to configure property and context of a job definition.
+    *
+    * @param <P> The job's properties type
+    * @param <C> The job's context type
+    */
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class JobTypeConfiguration<P, C> {
 
@@ -43,14 +49,35 @@ public final class JobDefinitions {
 
       private final C initialContext;
 
+      /**
+       * Creates a new instance.
+       *
+       * @return The new instance.
+       */
       public static JobTypeConfiguration<Nothing, Done> apply() {
          return apply(Nothing.getInstance(), Done.getInstance());
       }
 
+      /**
+       * Configures the default properties for a job. These properties will be used to run the job if no other properties
+       * are passed when starting a job execution.
+       *
+       * @param defaultProperties The default properties
+       * @param <T> The type of the properties
+       * @return A new builder instance
+       */
       public <T> JobTypeConfiguration<T, C> withDefaultProperties(T defaultProperties) {
          return apply(defaultProperties, initialContext);
       }
 
+      /**
+       * Configures the initial context of a job. This context will be used to initialize the job for the first time. After
+       * each run, the job can update its context.
+       *
+       * @param initialContext The job's initial context
+       * @param <T> The type of the context
+       * @return A new builder instance
+       */
       public <T> JobTypeConfiguration<P, T> withInitialContext(T initialContext) {
          return apply(defaultProperties, initialContext);
       }

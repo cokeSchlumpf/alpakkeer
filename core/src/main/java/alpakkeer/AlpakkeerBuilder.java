@@ -1,7 +1,10 @@
 package alpakkeer;
 
+import akka.japi.function.Function;
+import akka.japi.function.Function2;
 import akka.japi.function.Procedure;
 import akka.japi.function.Procedure2;
+import akka.japi.function.Procedure3;
 import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.config.RuntimeConfigurationBuilder;
@@ -19,19 +22,20 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
+/**
+ * Defines the Alpakkeer builder DSL.
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AlpakkeerBuilder {
 
-   private List<Procedure2<Javalin, RuntimeConfiguration>> apiExtensions;
+   private List<Procedure3<Javalin, RuntimeConfiguration, Resources>> apiExtensions;
 
    private List<Function<JobDefinitions, JobDefinition<?, ?>>> jobs;
 
    private List<Function<ProcessDefinitions, ProcessDefinition>> processes;
 
-   private List<Function<RuntimeConfiguration, MetricStore<TimeSeries>>> tsMetrics;
+   private List<Function2<RuntimeConfiguration, Resources, MetricStore<TimeSeries>>> tsMetrics;
 
    private RuntimeConfigurationBuilder runtimeConfig;
 
@@ -39,41 +43,114 @@ public final class AlpakkeerBuilder {
       return new AlpakkeerBuilder(Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), RuntimeConfigurationBuilder.apply());
    }
 
-   public AlpakkeerBuilder configure(Consumer<RuntimeConfigurationBuilder> configure) {
-      configure.accept(runtimeConfig);
+   /**
+    * Use this method to override the defaults of the Alpakkeer runtime configuration.
+    *
+    * @param configure A function which accepts the configuration builder
+    * @return The current builder instance
+    */
+   public AlpakkeerBuilder configure(Procedure<RuntimeConfigurationBuilder> configure) {
+      Operators.suppressExceptions(() -> configure.apply(runtimeConfig));
       return this;
    }
 
+   /**
+    * Use this method to extend the API with custom endpoints.
+    *
+    * @param apiExtension A function which takes the {@link Javalin} instance
+    * @return The current builder instance
+    */
    public AlpakkeerBuilder withApiEndpoint(Procedure<Javalin> apiExtension) {
-      apiExtensions.add((j, r) -> apiExtension.apply(j));
+      apiExtensions.add((j, c, r) -> apiExtension.apply(j));
       return this;
    }
 
+   /**
+    * Use this method to extend the API with custom endpoints.
+    *
+    * @param apiExtension A function which takes the {@link Javalin} instance and the {@link RuntimeConfiguration}
+    *                     of Alpakkeer instance
+    * @return The current builder instance
+    */
    public AlpakkeerBuilder withApiEndpoint(Procedure2<Javalin, RuntimeConfiguration> apiExtension) {
+      apiExtensions.add((j, c, r) -> apiExtension.apply(j, c));
+      return this;
+   }
+
+   /**
+    * Use this method to extend the API with custom endpoints.
+    *
+    * @param apiExtension A function which takes the {@link Javalin} instance, the {@link RuntimeConfiguration} and
+    *                     the {@link Resources} of the Alpakkeer instance
+    * @return The current builder instance
+    */
+   public AlpakkeerBuilder withApiEndpoint(Procedure3<Javalin, RuntimeConfiguration, Resources> apiExtension) {
       apiExtensions.add(apiExtension);
       return this;
    }
 
+   /**
+    * Registers a new job to the application.
+    *
+    * @param builder A factory method which creates a {@link JobDefinition} from {@link JobDefinitions}-builder
+    * @param <P>     The job's property type
+    * @param <C>     The job's context type
+    * @return The current builder instance
+    */
    public <P, C> AlpakkeerBuilder withJob(Function<JobDefinitions, JobDefinition<P, C>> builder) {
       jobs.add(builder::apply);
       return this;
    }
 
+   /**
+    * Adds a custom time series metric to the application.
+    *
+    * @param metric The custom metric.
+    * @return The current builder instance
+    */
    public AlpakkeerBuilder withTimeSeriesMetric(MetricStore<TimeSeries> metric) {
-      tsMetrics.add(c -> metric);
+      tsMetrics.add((c, r) -> metric);
       return this;
    }
 
+   /**
+    * Adds a custom time series metric to the application.
+    *
+    * @param metric A function which takes the {@link RuntimeConfiguration} and returns the custom metric.
+    * @return The current builder instance
+    */
    public AlpakkeerBuilder withTimeSeriesMetric(Function<RuntimeConfiguration, MetricStore<TimeSeries>> metric) {
+      tsMetrics.add((c, r) -> metric.apply(c));
+      return this;
+   }
+
+   /**
+    * Adds a custom time series metric to the application.
+    *
+    * @param metric A function which takes the {@link RuntimeConfiguration} and returns the custom metric.
+    * @return The current builder instance
+    */
+   public AlpakkeerBuilder withTimeSeriesMetric(Function2<RuntimeConfiguration, Resources, MetricStore<TimeSeries>> metric) {
       tsMetrics.add(metric);
       return this;
    }
 
+   /**
+    * Adds a new process to the application.
+    *
+    * @param builder A factory method which creates the ProcessDefinition
+    * @return The current builder instance
+    */
    public AlpakkeerBuilder withProcess(Function<ProcessDefinitions, ProcessDefinition> builder) {
       processes.add(builder);
       return this;
    }
 
+   /**
+    * Builds and starts the Alpakkeer application.
+    *
+    * @return The running Alpakkeer instance.
+    */
    public Alpakkeer start() {
       var alpakkeerConfiguration = AlpakkeerConfiguration.apply();
       var runtime = runtimeConfig.build(alpakkeerConfiguration);
@@ -81,10 +158,18 @@ public final class AlpakkeerBuilder {
 
       // initialize components
       runtime.getMetricsCollectors().forEach(c -> c.run(runtime));
-      jobs.stream().map(f -> f.apply(JobDefinitions.apply(runtime))).forEach(resources::addJob);
-      processes.stream().map(f -> f.apply(ProcessDefinitions.apply(runtime))).forEach(resources::addProcess);
-      tsMetrics.forEach(f -> resources.addTimeSeriesMetric(f.apply(runtime)));
-      apiExtensions.forEach(ext -> Operators.suppressExceptions(() -> ext.apply(runtime.getApp(), runtime)));
+
+      jobs.stream().map(f ->
+         Operators.suppressExceptions(() -> f.apply(JobDefinitions.apply(runtime)))).forEach(resources::addJob);
+
+      processes.stream().map(f ->
+         Operators.suppressExceptions(() -> f.apply(ProcessDefinitions.apply(runtime)))).forEach(resources::addProcess);
+
+      tsMetrics.forEach(f ->
+         Operators.suppressExceptions(() -> resources.addTimeSeriesMetric(f.apply(runtime, resources))));
+
+      apiExtensions.forEach(ext ->
+         Operators.suppressExceptions(() -> ext.apply(runtime.getApp(), runtime, resources)));
 
       return Alpakkeer.apply(alpakkeerConfiguration, runtime, resources);
    }

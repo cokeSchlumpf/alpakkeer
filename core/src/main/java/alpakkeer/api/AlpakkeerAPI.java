@@ -1,6 +1,5 @@
 package alpakkeer.api;
 
-import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.resources.Resources;
 import io.javalin.Javalin;
@@ -14,13 +13,12 @@ public final class AlpakkeerAPI {
    private final Javalin javalin;
 
    public static AlpakkeerAPI apply(
-      AlpakkeerConfiguration config,
       RuntimeConfiguration runtime,
       Resources resources) {
 
       var jobs = new JobsResource(resources, runtime.getObjectMapper());
       var processes = new ProcessesResource(resources);
-      var admin = new AdminResource(config, runtime.getScheduler());
+      var admin = new AdminResource(runtime.getConfiguration(), runtime.getScheduler());
       var metrics = new MetricsResource(resources, runtime);
 
       JavalinJackson.configure(runtime.getObjectMapper());

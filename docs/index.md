@@ -1,17 +1,44 @@
-# Welcome to MkDocs
+# Alpakkeer
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+![Alpakkeer Logo](./assets/logo-text.png)
 
-## Commands
+<div style="text-align: center; font-style: italic">
+Build, Run and Operate Akka Streams applications quickly, ready for production.
+</div>
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+---
+**Documentation:** [cokeschlumpf.github.io/alpakkeer](https://cokeschlumpf.github.io/alpakkeer/)<br />
+**GitHub Repository:** [github.com/cokeSchlumpf/alpakkeer](https://github.com/cokeSchlumpf/alpakkeer)
+---
 
-## Project layout
+Alpakkeer is an opinionated Java/ Scala toolkit to build, run and operate light-weight integration applications based on [Akka Streams](https://doc.akka.io/docs/akka/current/stream/index.html) and [Alpakka](https://doc.akka.io/docs/alpakka/current/index.html).
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+Alpakkeer bundles various libraries and components:
+
+* A Web Server based on [Javalin](https://javalin.io/) to provide simple access via REST APIs to manage Akka Streams processes and expose metrics to Prometheus and Grafana.
+ 
+* Configuration Management based on [Lightbend Config](https://github.com/lightbend/config) including some extensions for environment-based configurations and automatic mapping to POJOs.
+
+* Prometheus Client to record application and stream metrics. Alpakkeer also provides custom FlowStages to argument your stream with Akka Streams specific metrics. 
+
+* An easy to use DSL for Java and Scala to compose applications.
+
+## Getting Started
+
+
+
+## Requirements
+
+Alpakkeer requires:
+
+* Java 11+ 
+* Scala 2.13
+
+Alpakkeer runs on:
+
+* Akka 2.6.4+
+* Akka Streams 2.6.4+
+
+## License
+
+This project is licensed under the terms of the Apache 2.0 License.

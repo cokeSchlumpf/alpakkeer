@@ -81,5 +81,6 @@ out
 ### Alpakkeer ###
 application.local.conf
 tweets.csv
+site/
 
 # End of https://www.gitignore.io/api/java,macos,gradle

@@ -8,9 +8,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation can be used to annotate configuration class for {@link Configs#mapToConfigClass(Class, Config)}.
+ * This annotation can be used to annotate configuration class for {@link alpakkeer.core.config.Configs#mapToConfigClass(Class, Config)}.
  *
- * @author Michael Wellner (michael_wellner@rcomext.com).
+ * @author Michael Wellner (michael.wellner@gmail.com).
  */
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)

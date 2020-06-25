@@ -70,7 +70,7 @@ public final class JobsResource {
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = Name.apply(ctx.pathParam(PARAM_NAME));
 
-         resources.getJob(name).ifPresentOrElse(
+         resources.findJob(name).ifPresentOrElse(
             job -> ctx.json(job.getStatusDetails().toCompletableFuture()),
             () -> notFound(name));
       });
@@ -93,7 +93,7 @@ public final class JobsResource {
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = Name.apply(ctx.pathParam(PARAM_NAME));
 
-         resources.getJob(name).ifPresentOrElse(
+         resources.findJob(name).ifPresentOrElse(
             job -> ctx.json(StartExecution.apply(true, job.getDefinition().getDefaultProperties())),
             () -> notFound(name));
       });
@@ -117,7 +117,7 @@ public final class JobsResource {
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = Name.apply(ctx.pathParam(PARAM_NAME));
 
-         resources.getJob(name).ifPresentOrElse(
+         resources.findJob(name).ifPresentOrElse(
             job -> {
                var json = ctx.body();
                var request = Json.apply(om).deserializeGenericClassFromJson(json, StartExecution.class, job.getDefinition().getDefaultProperties().getClass());
@@ -153,7 +153,7 @@ public final class JobsResource {
          var name = Name.apply(ctx.pathParam(PARAM_NAME));
          var clearQueue = ctx.queryParam("clear") != null;
 
-         resources.getJob(name).ifPresentOrElse(
+         resources.findJob(name).ifPresentOrElse(
             job -> ctx.result(job.cancel(clearQueue).thenApply(d -> "Ok").toCompletableFuture()),
             () -> notFound(name)
          );

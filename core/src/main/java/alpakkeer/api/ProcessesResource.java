@@ -50,7 +50,7 @@ public final class ProcessesResource {
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = ctx.pathParam(PARAM_NAME);
 
-         resources.getProcess(name).ifPresentOrElse(
+         resources.findProcess(name).ifPresentOrElse(
             job -> ctx.json(job.getStatusDetails().toCompletableFuture()),
             () -> notFound(name));
       });
@@ -70,7 +70,7 @@ public final class ProcessesResource {
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = ctx.pathParam(PARAM_NAME);
 
-         resources.getProcess(name).ifPresentOrElse(
+         resources.findProcess(name).ifPresentOrElse(
             process -> ctx.result(process.start().thenApply(d -> "Ok").toCompletableFuture()),
             () -> notFound(name)
          );
@@ -91,7 +91,7 @@ public final class ProcessesResource {
       return OpenApiBuilder.documented(docs, ctx -> {
          var name = ctx.pathParam(PARAM_NAME);
 
-         resources.getProcess(name).ifPresentOrElse(
+         resources.findProcess(name).ifPresentOrElse(
             process -> ctx.result(process.stop().thenApply(d -> "Ok").toCompletableFuture()),
             () -> notFound(name)
          );
