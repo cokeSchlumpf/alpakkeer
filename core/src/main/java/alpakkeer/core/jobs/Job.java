@@ -24,7 +24,7 @@ public interface Job<P, C> {
     * @param properties The properties for the execution.
     * @return The completion stage for the result of the execution.
     */
-   CompletionStage<CompletionStage<C>> start(Boolean queue, P properties);
+   CompletionStage<C> start(Boolean queue, P properties);
 
    /**
     * Request to start a job execution with default properties.
@@ -32,7 +32,7 @@ public interface Job<P, C> {
     * @param queue Whether the request should be queued if the job is already running.
     * @return The completion stage for the result of the execution.
     */
-   default CompletionStage<CompletionStage<C>> start(Boolean queue) {
+   default CompletionStage<C> start(Boolean queue) {
       return start(queue, getDefinition().getDefaultProperties());
    }
 
@@ -41,7 +41,7 @@ public interface Job<P, C> {
     *
     * @return The completion stage for the result of the execution.
     */
-   default CompletionStage<CompletionStage<C>> start() {
+   default CompletionStage<C> start() {
       return start(true);
    }
 

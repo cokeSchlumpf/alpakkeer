@@ -97,8 +97,8 @@ public final class AlpakkeerBuilder {
     * @param <C>     The job's context type
     * @return The current builder instance
     */
-   public <P, C> AlpakkeerBuilder withJob(Function<JobDefinitions, JobDefinition<P, C>> builder) {
-      jobs.add(builder::apply);
+   public <P, C> AlpakkeerBuilder withJob(Function<JobDefinitions, JobDefinitions.JobSettingsConfiguration<P, C>> builder) {
+      jobs.add(j -> builder.apply(j).build());
       return this;
    }
 

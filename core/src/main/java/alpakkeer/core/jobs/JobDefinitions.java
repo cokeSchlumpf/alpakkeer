@@ -1,16 +1,13 @@
 package alpakkeer.core.jobs;
 
 import akka.Done;
-import akka.japi.function.Function2;
-import akka.japi.function.Function3;
-import akka.japi.function.Function4;
+import akka.japi.Procedure;
 import akka.japi.function.Procedure2;
 import akka.stream.javadsl.RunnableGraph;
 import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.*;
 import alpakkeer.core.scheduler.model.CronExpression;
-import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
 import alpakkeer.core.values.Nothing;
@@ -62,7 +59,7 @@ public final class JobDefinitions {
        * are passed when starting a job execution.
        *
        * @param defaultProperties The default properties
-       * @param <T> The type of the properties
+       * @param <T>               The type of the properties
        * @return A new builder instance
        */
       public <T> JobTypeConfiguration<T, C> withDefaultProperties(T defaultProperties) {
@@ -74,7 +71,7 @@ public final class JobDefinitions {
        * each run, the job can update its context.
        *
        * @param initialContext The job's initial context
-       * @param <T> The type of the context
+       * @param <T>            The type of the context
        * @return A new builder instance
        */
       public <T> JobTypeConfiguration<P, T> withInitialContext(T initialContext) {
@@ -83,6 +80,12 @@ public final class JobDefinitions {
 
    }
 
+   /**
+    * An intermediate builder to create job definitions.
+    *
+    * @param <P> The property type of the job
+    * @param <C> The context type of the job
+    */
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class JobRunnableConfiguration<P, C> {
 
@@ -94,6 +97,16 @@ public final class JobDefinitions {
 
       private final JobMonitorGroup<P, C> monitors;
 
+      /**
+       * Creates a new instance.
+       *
+       * @param name                 The name of the job
+       * @param runtimeConfiguration The Alpakkeer runtime configuration
+       * @param jobTypes             The type configurations of the job
+       * @param <P>                  The job's property type
+       * @param <C>                  The job's context type
+       * @return A new instance
+       */
       public static <P, C> JobRunnableConfiguration<P, C> apply(
          String name, RuntimeConfiguration runtimeConfiguration,
          JobTypeConfiguration<P, C> jobTypes) {
@@ -101,62 +114,44 @@ public final class JobDefinitions {
          return apply(name, runtimeConfiguration, jobTypes, JobMonitorGroup.apply());
       }
 
-      public JobSettingsConfiguration<P, C> runCancelableCS(Function3<String, P, C, CompletionStage<JobHandle<C>>> run) {
+      /**
+       * Define the job which returns a {@link JobHandle}.
+       *
+       * @param run The job execution factory.
+       * @return The {@link JobSettingsConfiguration} for the job.
+       */
+      public JobSettingsConfiguration<P, C> runCancelableCS(Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run) {
          return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run, monitors);
       }
 
-      public JobSettingsConfiguration<P, C> runCancelable(Function3<String, P, C, JobHandle<C>> run) {
-         return runCancelableCS((s, p, c) -> CompletableFuture.completedFuture(run.apply(s, p, c)));
+      public JobSettingsConfiguration<P, C> runCancelable(Function<JobStreamBuilder<P, C>, JobHandle<C>> run) {
+         return runCancelableCS(sb -> CompletableFuture.completedFuture(run.apply(sb)));
       }
 
-      public JobSettingsConfiguration<P, C> runCS(Function3<String, P, C, CompletionStage<C>> run) {
-         return runCancelable((s, p, c) -> JobHandles.create(run.apply(s, p, c)));
+      public JobSettingsConfiguration<P, C> runCS(Function<JobStreamBuilder<P, C>, CompletionStage<C>> run) {
+         return runCancelable(sb -> JobHandles.create(run.apply(sb)));
       }
 
-      public JobSettingsConfiguration<P, C> runGraph(Function3<String, P, C, RunnableGraph<CompletionStage<C>>> run) {
-         return runCS((s, p, c) -> Operators.suppressExceptions(() -> run.apply(s, p, c)).run(runtimeConfiguration.getSystem()));
+      public JobSettingsConfiguration<P, C> runGraph(Function<JobStreamBuilder<P, C>, RunnableGraph<CompletionStage<C>>> run) {
+         return runCS(sb -> Operators.suppressExceptions(() -> run.apply(sb)).run(runtimeConfiguration.getSystem()));
       }
 
-      public JobSettingsConfiguration<P, C> runScalaGraph(Function3<String, P, C, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
-         return runGraph((s, p, c) -> run.apply(s, p, c).mapMaterializedValue(FutureConverters::toJava).asJava());
+      public JobSettingsConfiguration<P, C> runScalaGraph(Function<JobStreamBuilder<P, C>, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
+         return runGraph(sb -> run.apply(sb).mapMaterializedValue(FutureConverters::toJava).asJava());
       }
 
-      public JobSettingsConfiguration<P, C> runGraph(Function4<String, P, C, StreamBuilder, RunnableGraph<CompletionStage<C>>> run) {
-         return runGraph((s, p, c) -> {
-            var sb = JobStreamBuilder.apply(monitors, s);
-            return run.apply(s, p, c, sb);
-         });
+      public JobSettingsConfiguration<P, C> run(Function<JobStreamBuilder<P, C>, C> run) {
+         return runCS(sb -> CompletableFuture.supplyAsync(() -> Operators.suppressExceptions(() -> run.apply(sb))));
       }
 
-      public JobSettingsConfiguration<P, C> runScalaGraph(Function4<String, P, C, StreamBuilder, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
-         return runGraph((s, p, c, sb) -> run.apply(s, p, c, sb).mapMaterializedValue(FutureConverters::<C>toJava).asJava());
-      }
-
-      public JobSettingsConfiguration<P, C> run(Function3<String, P, C, C> run) {
-         return runCS((s, p, c) -> CompletableFuture.supplyAsync(() -> Operators.suppressExceptions(() -> run.apply(s, p, c))));
-      }
-
-      public JobSettingsConfiguration<P, C> runCS(Function2<String, P, CompletionStage<C>> run) {
-         return runCS((s, p, c) -> run.apply(s, p).thenApply(i -> c));
-      }
-
-      public JobSettingsConfiguration<P, C> runGraph(Function2<String, P, RunnableGraph<CompletionStage<C>>> run) {
-         return runGraph((s, p, c) -> run.apply(s, p));
-      }
-
-      public JobSettingsConfiguration<P, C> runScalaGraph(Function2<String, P, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
-         return runGraph((s, p) -> run.apply(s, p).mapMaterializedValue(FutureConverters::toJava).asJava());
-      }
-
-      public JobSettingsConfiguration<P, C> run(Procedure2<String, P> run) {
-         return runCancelable((s, p, c) -> JobHandles
+      public JobSettingsConfiguration<P, C> run(Procedure<JobStreamBuilder<P, C>> run) {
+         return runCancelable(sb -> JobHandles
             .createFromOptional(CompletableFuture
                .supplyAsync(() -> {
-                  Operators.suppressExceptions(() -> run.apply(s, p));
+                  Operators.suppressExceptions(() -> run.apply(sb));
                   return Optional.empty();
                })));
       }
-
 
    }
 
@@ -169,7 +164,7 @@ public final class JobDefinitions {
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
-      private final Function3<String, P, C, CompletionStage<JobHandle<C>>> run;
+      private final Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run;
 
       private final JobMonitorGroup<P, C> monitors;
 
@@ -181,7 +176,7 @@ public final class JobDefinitions {
 
       public static <P, C> JobSettingsConfiguration<P, C> apply(
          String name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
-         Function3<String, P, C, CompletionStage<JobHandle<C>>> run, JobMonitorGroup<P, C> monitors) {
+         Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run, JobMonitorGroup<P, C> monitors) {
 
          var logger = LoggerFactory.getLogger(String.format(
             "alpakkeer.jobs.%s",
@@ -254,7 +249,7 @@ public final class JobDefinitions {
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
-      private final Function3<String, P, C, CompletionStage<JobHandle<C>>> run;
+      private final Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run;
 
       private final Logger logger;
 
@@ -301,7 +296,7 @@ public final class JobDefinitions {
 
       @Override
       public CompletionStage<JobHandle<C>> run(String executionId, P properties, C context) {
-         return Operators.suppressExceptions(() -> run.apply(executionId, properties, context));
+         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(monitors, executionId, properties, context)));
       }
 
    }

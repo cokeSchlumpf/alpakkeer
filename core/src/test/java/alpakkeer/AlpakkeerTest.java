@@ -13,19 +13,19 @@ public class AlpakkeerTest {
    public void simpleTest() throws ExecutionException, InterruptedException {
       var alpakkeer = Alpakkeer
          .create()
-         .withJob(jobs -> jobs
-            .create("hello-world")
-            .runGraph((id, context) -> Source
-               .single("Hello World")
-               .toMat(Sink.foreach(System.out::println), Keep.right()))
-            .build())
+         .withJob(
+            jobs -> jobs
+               .create("hello-world")
+               .runGraph((id, context) -> Source
+                  .single("Hello World")
+                  .toMat(Sink.foreach(System.out::println), Keep.right()))
+               .withLoggingMonitor())
          .start();
 
       alpakkeer
          .getResources()
          .getJob("hello-world")
          .start()
-         .thenCompose(r -> r)
          .toCompletableFuture()
          .get();
    }
