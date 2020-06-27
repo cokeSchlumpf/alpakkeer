@@ -5,8 +5,9 @@ import io.javalin.Javalin;
 import org.slf4j.Logger;
 
 import java.time.Duration;
+import java.util.concurrent.CompletionStage;
 
-public interface ProcessDefinition extends ProcessRunner {
+public interface ProcessDefinition {
 
    void extendApi(Javalin api, Process processInstance);
 
@@ -23,5 +24,7 @@ public interface ProcessDefinition extends ProcessRunner {
    ProcessMonitorGroup getMonitors();
 
    Duration getRetryBackoffResetTimeout();
+
+   CompletionStage<ProcessHandle> run(String executionId);
 
 }

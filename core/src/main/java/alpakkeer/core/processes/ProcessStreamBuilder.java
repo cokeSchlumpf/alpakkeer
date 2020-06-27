@@ -1,25 +1,21 @@
-package alpakkeer.core.jobs;
+package alpakkeer.core.processes;
 
 import akka.NotUsed;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Sink;
 import alpakkeer.config.RuntimeConfiguration;
-import alpakkeer.core.jobs.monitor.JobMonitor;
+import alpakkeer.core.processes.monitor.ProcessMonitor;
 import alpakkeer.core.stream.*;
 import lombok.AllArgsConstructor;
 
 import java.time.Duration;
 
 @AllArgsConstructor(staticName = "apply")
-public final class JobStreamBuilder<P, C> implements StreamBuilder {
+public class ProcessStreamBuilder implements StreamBuilder {
 
-   private final JobMonitor<P, C> monitor;
+   private final ProcessMonitor monitor;
 
    private final String executionId;
-
-   private final P properties;
-
-   private final C context;
 
    private final RuntimeConfiguration runtime;
 
@@ -50,7 +46,6 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
    @Override
    public <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name, Duration statsInterval) {
       return CheckpointMonitors.create(createCheckpointStatsSink(name, statsInterval));
-
    }
 
    @Override
@@ -69,30 +64,12 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
    }
 
    /**
-    * Returns the input context for the current execution.
-    *
-    * @return The current context
-    */
-   public C getContext() {
-      return context;
-   }
-
-   /**
     * Returns the execution id of the current execution.
     *
     * @return The current execution id
     */
    public String getExecutionId() {
       return executionId;
-   }
-
-   /**
-    * Returns the properties of the execution.
-    *
-    * @return The execution's property
-    */
-   public P getProperties() {
-      return properties;
    }
 
    /**

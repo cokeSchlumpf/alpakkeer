@@ -27,6 +27,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
+/**
+ * Factory for {@link JobDefinition}.
+ */
 @AllArgsConstructor(staticName = "apply")
 public final class JobDefinitions {
 
@@ -267,7 +270,7 @@ public final class JobDefinitions {
        * @return The jib definition.
        */
       public JobDefinition<P, C> build() {
-         return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions);
+         return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions, runtimeConfiguration);
       }
 
       /**
@@ -399,6 +402,8 @@ public final class JobDefinitions {
 
       private final List<Procedure2<Javalin, Job<P, C>>> apiExtensions;
 
+      private final RuntimeConfiguration runtime;
+
       @Override
       public void extendApi(Javalin api, Job<P, C> jobInstance) {
          apiExtensions.forEach(ext -> Operators.suppressExceptions(() -> ext.apply(api, jobInstance)));
@@ -436,7 +441,7 @@ public final class JobDefinitions {
 
       @Override
       public CompletionStage<JobHandle<C>> run(String executionId, P properties, C context) {
-         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(monitors, executionId, properties, context)));
+         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(monitors, executionId, properties, context, runtime)));
       }
 
    }
