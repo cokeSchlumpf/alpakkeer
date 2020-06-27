@@ -59,4 +59,5 @@ public final class LoggingMetricsCollector implements MetricsCollector {
    public List<MetricStore<TimeSeries>> getTimeSeriesMetrics() {
       return List.of();
    }
+
 }

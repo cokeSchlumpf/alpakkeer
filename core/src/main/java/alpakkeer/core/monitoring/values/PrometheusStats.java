@@ -1,4 +1,4 @@
-package alpakkeer.core.monitoring.collectors;
+package alpakkeer.core.monitoring.values;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -9,7 +9,7 @@ import java.util.Map;
 
 @Value
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-class PrometheusStats {
+public class PrometheusStats {
 
    Instant moment;
 

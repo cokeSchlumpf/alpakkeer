@@ -7,6 +7,7 @@ import alpakkeer.core.monitoring.Metrics;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.monitoring.values.DataPoint;
 import alpakkeer.core.monitoring.values.Marker;
+import alpakkeer.core.monitoring.values.PrometheusStats;
 import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.util.Operators;

@@ -115,35 +115,91 @@ public final class JobDefinitions {
       }
 
       /**
-       * Define the job which returns a {@link JobHandle}.
+       * Define a job execution factory which returns a {@link CompletionStage} of a {@link JobHandle}. A {@link JobHandle} can be used
+       * to cancel the job during execution.
        *
-       * @param run The job execution factory.
-       * @return The {@link JobSettingsConfiguration} for the job.
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
        */
       public JobSettingsConfiguration<P, C> runCancelableCS(Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run) {
          return JobSettingsConfiguration.apply(name, runtimeConfiguration, jobTypes, run, monitors);
       }
 
+      /**
+       * Define a job execution factory which returns a {@link JobHandle}. A {@link JobHandle} can be used to cancel
+       * the job during execution. The result of the Job Handle will be the next value of the context and the
+       * result value of the job execution.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
       public JobSettingsConfiguration<P, C> runCancelable(Function<JobStreamBuilder<P, C>, JobHandle<C>> run) {
          return runCancelableCS(sb -> CompletableFuture.completedFuture(run.apply(sb)));
       }
 
+      /**
+       * Define a job execution factory which returns a {@link CompletionStage}. The result of the completion stage will
+       * be the next context of the job and the result value of the job execution.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
       public JobSettingsConfiguration<P, C> runCS(Function<JobStreamBuilder<P, C>, CompletionStage<C>> run) {
          return runCancelable(sb -> JobHandles.create(run.apply(sb)));
       }
 
+      /**
+       * Define a job execution factory which returns a Scala {@link Future}. The result of the future will be the next
+       * context of the job and the result of the job execution.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
+      public JobSettingsConfiguration<P, C> runCSScala(Function<JobStreamBuilder<P, C>, Future<C>> run) {
+         return runCancelable(sb -> JobHandles.create(FutureConverters.toJava(run.apply(sb))));
+      }
+
+      /**
+       * Define a job execution factory which returns an Akka Streams {@link RunnableGraph} which materializes to a
+       * {@link CompletionStage}. The result will be the next job context and the result of the
+       * job execution.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
       public JobSettingsConfiguration<P, C> runGraph(Function<JobStreamBuilder<P, C>, RunnableGraph<CompletionStage<C>>> run) {
          return runCS(sb -> Operators.suppressExceptions(() -> run.apply(sb)).run(runtimeConfiguration.getSystem()));
       }
 
-      public JobSettingsConfiguration<P, C> runScalaGraph(Function<JobStreamBuilder<P, C>, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
+      /**
+       * Define a job execution factory which returns an Akka Streams {@link RunnableGraph} which materializes to a
+       * Scala {@link Future}. The result will be the next job context and the result of the job execution.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
+      public JobSettingsConfiguration<P, C> runGraphScala(Function<JobStreamBuilder<P, C>, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
          return runGraph(sb -> run.apply(sb).mapMaterializedValue(FutureConverters::toJava).asJava());
       }
 
+      /**
+       * Define a job execution factory by defining a simple function. The function will be executed asynchronously on each
+       * job execution. The result of the function will be the next job context and the result of the job execution.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
       public JobSettingsConfiguration<P, C> run(Function<JobStreamBuilder<P, C>, C> run) {
          return runCS(sb -> CompletableFuture.supplyAsync(() -> Operators.suppressExceptions(() -> run.apply(sb))));
       }
 
+      /**
+       * Define a job execution factory by defining a simple procedure. The procedure will be executed asynchronously on
+       * each job execution. The context of the job will always be the initial context and thus can be ignored.
+       *
+       * @param run The job execution factory
+       * @return The {@link JobSettingsConfiguration} for the job
+       */
       public JobSettingsConfiguration<P, C> run(Procedure<JobStreamBuilder<P, C>> run) {
          return runCancelable(sb -> JobHandles
             .createFromOptional(CompletableFuture
@@ -155,6 +211,12 @@ public final class JobDefinitions {
 
    }
 
+   /**
+    * The final builder for creating {@link JobDefinition} instances.
+    *
+    * @param <P> The property type of the job
+    * @param <C> The context type of the job
+    */
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class JobSettingsConfiguration<P, C> {
 
@@ -174,6 +236,18 @@ public final class JobDefinitions {
 
       private Logger logger;
 
+      /**
+       * Creates a new instance.
+       *
+       * @param name                 The name of the job
+       * @param runtimeConfiguration The Alpakkeer runtime configuration
+       * @param jobTypes             The type configurations of the job
+       * @param run                  The job execution factory
+       * @param monitors             The monitors for the job
+       * @param <P>                  The job's property type
+       * @param <C>                  The job's context type
+       * @return A new instance
+       */
       public static <P, C> JobSettingsConfiguration<P, C> apply(
          String name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
          Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run, JobMonitorGroup<P, C> monitors) {
@@ -187,19 +261,43 @@ public final class JobDefinitions {
             Lists.newArrayList(), Lists.newArrayList(), logger);
       }
 
+      /**
+       * Creates the final job definition.
+       *
+       * @return The jib definition.
+       */
       public JobDefinition<P, C> build() {
          return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions);
       }
 
+      /**
+       * Specify an additional API endpoint for the job. The procedure passed to this method may use the {@link Javalin}
+       * instance to define API endpoints which also use/ access the related {@link Job} instance.
+       *
+       * @param apiExtension A procedure which can extend the {@link Javalin} API.
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withApiEndpoint(Procedure2<Javalin, Job<P, C>> apiExtension) {
          apiExtensions.add(apiExtension);
          return this;
       }
 
+      /**
+       * Enable a {@link InMemoryHistoryJobMonitor} for the job. A history monitor stores errors and results of executions. This default
+       * history monitor will store the information about the last 10 executions.
+       *
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withHistoryMonitor() {
          return withHistoryMonitor(10);
       }
 
+      /**
+       * Enable a {@link InMemoryHistoryJobMonitor} for the job. A history monitor stores errors and results of executions.
+       *
+       * @param limit Number of executions for which information should be kept
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withHistoryMonitor(int limit) {
          return withMonitor(InMemoryHistoryJobMonitor.apply(
             limit,
@@ -207,35 +305,77 @@ public final class JobDefinitions {
             runtimeConfiguration.getSystem()));
       }
 
+      /**
+       * Enables a {@link LoggingJobMonitor} for the job. The monitor will log information and errors about the executions of the
+       * job to the default logging infrastructure.
+       *
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withLoggingMonitor() {
          return withMonitor(LoggingJobMonitor.apply(name, logger, runtimeConfiguration.getObjectMapper()));
       }
 
+      /**
+       * Enables a {@link PrometheusJobMonitor} for the job. The monitor will log information about the executions of the job
+       * in Prometheus Metrics.
+       *
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withPrometheusMonitor() {
          return withMonitor(PrometheusJobMonitor.apply(name, runtimeConfiguration.getCollectorRegistry()));
       }
 
+      /**
+       * Enable an additional monitor for the job.
+       *
+       * @param monitor The monitor to be enabled.
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withMonitor(JobMonitor<P, C> monitor) {
          monitors.withMonitor(monitor);
          return this;
       }
 
-      /*
-       * Schedule
+      /**
+       * Schedule executions of the job.
+       *
+       * @param execution The definition of the scheduled execution.
+       * @return The current instance of the builder
        */
       public JobSettingsConfiguration<P, C> withScheduledExecution(ScheduleExecution<P> execution) {
          this.scheduleExecutions.add(execution);
          return this;
       }
 
+      /**
+       * Schedule executions of the job.
+       *
+       * @param cron       The cron expression which defines the times when the job is executed
+       * @param properties The properties which will be passed to the job execution factory when starting the job
+       * @param queue      Whether the job execution should be queued if it already running when the execution gets triggered by schedule
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withScheduledExecution(CronExpression cron, P properties, boolean queue) {
          return withScheduledExecution(ScheduleExecution.apply(properties, queue, cron));
       }
 
+      /**
+       * Schedule executions of the job with queueing enabled.
+       *
+       * @param cron       The cron expression which defines the times when the job is executed
+       * @param properties The properties which will be passed to the job execution factory when starting the job
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withScheduledExecution(CronExpression cron, P properties) {
          return withScheduledExecution(cron, properties, true);
       }
 
+      /**
+       * Schedule executions of the job with queueing enabled and default properties.
+       *
+       * @param cron The cron expression which defines the times when the job is executed
+       * @return The current instance of the builder
+       */
       public JobSettingsConfiguration<P, C> withScheduledExecution(CronExpression cron) {
          return withScheduledExecution(cron, jobTypes.defaultProperties, true);
       }
@@ -301,22 +441,69 @@ public final class JobDefinitions {
 
    }
 
+   /**
+    * Start creating a new job.
+    *
+    * @param name The name of the job
+    * @param cfg  A helper-function to configure job's types and default properties and context
+    * @param <P>  The type of the properties
+    * @param <C>  The type of the context
+    * @return A new builder instance
+    */
    public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Done>, JobTypeConfiguration<P, C>> cfg) {
       return JobRunnableConfiguration.apply(name, runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
    }
 
+   /**
+    * Start creating a new job with default properties and default context. Properties are arguments which are passed to
+    * every job execution. The context is state of the job which can be changed with each execution. Also the context
+    * will be passed to the job execution factory.
+    * <p>
+    * The default properties will be passed to the job execution factory when no other properties are defined when the job
+    * is initiated.
+    *
+    * @param name              The name of the job
+    * @param defaultProperties The default properties of the job
+    * @param initialContext    The initial context of the job
+    * @param <P>               The type of the properties
+    * @param <C>               The type of the context
+    * @return A new builder instance
+    */
    public <P, C> JobRunnableConfiguration<P, C> create(String name, P defaultProperties, C initialContext) {
       return create(name, cfg -> JobTypeConfiguration.apply(defaultProperties, initialContext));
    }
 
+   /**
+    * Start creating a new job with default properties. Properties are arguments which are passed to
+    * every job execution.
+    * <p>
+    * The default properties will be passed to the job execution factory when no other properties are defined when the job
+    * is initiated.
+    *
+    * @param name              The name of the job
+    * @param defaultProperties The default properties of the job
+    * @param <P>               The type of the properties
+    * @return A new builder instance
+    */
    public <P> JobRunnableConfiguration<P, Done> create(String name, P defaultProperties) {
       return create(name, defaultProperties, Done.getInstance());
    }
 
+   /**
+    * Start creating a new job.
+    *
+    * @param name The name of the job
+    * @return A new builder instance
+    */
    public JobRunnableConfiguration<Nothing, Done> create(String name) {
       return create(name, Nothing.getInstance());
    }
 
+   /**
+    * Access other Alpakkeer runtime components during job definition.
+    *
+    * @return The initialized Alpakkeer runtime
+    */
    public RuntimeConfiguration getRuntime() {
       return runtimeConfiguration;
    }
