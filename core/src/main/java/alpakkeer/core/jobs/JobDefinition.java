@@ -2,7 +2,6 @@ package alpakkeer.core.jobs;
 
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.JobMonitorGroup;
-import alpakkeer.core.values.Name;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 
@@ -16,7 +15,7 @@ public interface JobDefinition<P, C> extends JobRunner<P, C> {
 
    C getInitialContext();
 
-   Name getName();
+   String getName();
 
    Logger getLogger();
 

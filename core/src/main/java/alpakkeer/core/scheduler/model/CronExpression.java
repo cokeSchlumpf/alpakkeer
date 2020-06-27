@@ -1,7 +1,6 @@
 package alpakkeer.core.scheduler.model;
 
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import alpakkeer.core.values.ValueClass;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;

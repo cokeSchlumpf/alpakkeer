@@ -5,7 +5,6 @@ import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.model.ScheduledExecution;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import com.google.common.collect.Lists;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -59,7 +58,7 @@ public class Context<P, C> {
             .collect(Collectors.toList()));
    }
 
-   public void removeScheduledExecution(Name name) {
+   public void removeScheduledExecution(String name) {
       schedule.removeIf(s -> s.getName().equals(name));
    }
 

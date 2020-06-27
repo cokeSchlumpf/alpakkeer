@@ -1,7 +1,6 @@
 package alpakkeer.core.scheduler.model;
 
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import org.quartz.Scheduler;
@@ -13,7 +12,7 @@ import java.time.ZoneId;
 @AllArgsConstructor(staticName = "apply")
 public class JobDetails {
 
-   Name name;
+   String name;
 
    String cronExpression;
 

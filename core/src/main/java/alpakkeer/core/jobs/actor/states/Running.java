@@ -4,7 +4,6 @@ import akka.actor.typed.javadsl.ActorContext;
 import alpakkeer.core.jobs.JobHandle;
 import alpakkeer.core.jobs.actor.context.Context;
 import alpakkeer.core.jobs.actor.context.CurrentExecutionInternal;
-import alpakkeer.core.jobs.model.CurrentExecution;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
 
@@ -35,7 +34,7 @@ public final class Running<P, C> extends State<P, C> {
       } else {
          var ex = new NoSuchElementException(String.format(
             "Job `%s` did not return a result in execution `%s`",
-            context.getJobDefinition().getName().getValue(),
+            context.getJobDefinition().getName(),
             currentExecution.getCurrentExecution().getId()));
 
          context.getJobDefinition().getMonitors().onCompleted(currentExecution.getCurrentExecution().getId());

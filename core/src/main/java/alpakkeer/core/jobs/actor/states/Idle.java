@@ -5,7 +5,6 @@ import akka.actor.typed.javadsl.ActorContext;
 import alpakkeer.core.jobs.actor.context.Context;
 import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.model.JobState;
-import alpakkeer.core.jobs.model.QueuedExecution;
 
 public final class Idle<P, C> extends State<P, C> {
 

@@ -7,7 +7,6 @@ import alpakkeer.core.monitoring.values.Marker;
 import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import io.prometheus.client.exporter.common.TextFormat;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -24,7 +23,7 @@ public final class LoggingMetricsCollector implements MetricsCollector {
 
    @Override
    public void run(RuntimeConfiguration runtime) {
-      Name jobName = Name.apply("alpakkeer-internal-collectors-logging");
+      var jobName = "alpakkeer-internal-collectors-logging";
       runtime
          .getScheduler()
          .schedule(

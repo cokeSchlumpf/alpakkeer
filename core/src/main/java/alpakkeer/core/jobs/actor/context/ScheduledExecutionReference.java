@@ -1,7 +1,6 @@
 package alpakkeer.core.jobs.actor.context;
 
 import alpakkeer.core.scheduler.model.CronExpression;
-import alpakkeer.core.values.Name;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
@@ -9,7 +8,7 @@ import lombok.Value;
 @AllArgsConstructor(staticName = "apply")
 public class ScheduledExecutionReference<P> {
 
-   Name name;
+   String name;
 
    P properties;
 

@@ -6,7 +6,6 @@ import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.scheduler.model.JobDetails;
 import alpakkeer.core.scheduler.model.ScheduledJob;
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.quartz.*;
@@ -26,7 +25,7 @@ public final class QuartzCronScheduler implements CronScheduler {
 
    private final Scheduler scheduler;
 
-   private final AtomicReference<Map<Name, ScheduledJob>> jobs;
+   private final AtomicReference<Map<String, ScheduledJob>> jobs;
 
    public static QuartzCronScheduler apply() {
       var properties = new Properties();
@@ -40,10 +39,10 @@ public final class QuartzCronScheduler implements CronScheduler {
    }
 
    @Override
-   public CompletionStage<Done> schedule(Name name, CronExpression cron, Runnable job) {
+   public CompletionStage<Done> schedule(String name, CronExpression cron, Runnable job) {
       jobs.getAndUpdate(jobs -> {
-         var key = new JobKey(name.getValue());
-         var triggerKey = new TriggerKey(name.getValue());
+         var key = new JobKey(name);
+         var triggerKey = new TriggerKey(name);
          var jobData = new JobDataMap();
          var jobBuilder = JobBuilder.newJob(QuartSchedulerJob.class);
 
@@ -78,7 +77,7 @@ public final class QuartzCronScheduler implements CronScheduler {
    }
 
    @Override
-   public CompletionStage<Optional<JobDetails>> getJob(Name name) {
+   public CompletionStage<Optional<JobDetails>> getJob(String name) {
       var result = Optional
          .ofNullable(jobs.get().get(name))
          .map(job -> JobDetails.apply(job, scheduler));
@@ -99,7 +98,7 @@ public final class QuartzCronScheduler implements CronScheduler {
    }
 
    @Override
-   public CompletionStage<Done> remove(Name name) {
+   public CompletionStage<Done> remove(String name) {
       jobs.getAndUpdate(jobs -> {
          if (jobs.containsKey(name)) {
             Operators.suppressExceptions(() -> scheduler.deleteJob(jobs.get(name).getKey()));

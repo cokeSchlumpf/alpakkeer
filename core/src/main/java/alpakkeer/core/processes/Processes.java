@@ -57,7 +57,7 @@ public final class Processes {
 
    public static Process apply(ActorSystem system, ProcessDefinition definition) {
       var behavior = ProcessActor.create(definition);
-      var actor = Adapter.spawn(system, behavior, definition.getName().getValue());
+      var actor = Adapter.spawn(system, behavior, definition.getName());
       var process = ActorProcess.apply(definition, actor, ActorPatterns.apply(system));
 
       if (definition.isInitiallyStarted()) {

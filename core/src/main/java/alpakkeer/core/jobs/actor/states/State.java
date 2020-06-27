@@ -9,7 +9,6 @@ import alpakkeer.core.jobs.actor.protocol.*;
 import alpakkeer.core.jobs.exceptions.AlreadyRunningException;
 import alpakkeer.core.jobs.model.*;
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import org.slf4j.Logger;
 
 import java.time.LocalDateTime;
@@ -49,10 +48,9 @@ public abstract class State<P, C> {
 
    public void onSchedule(Schedule<P, C> schedule) {
       String id = UUID.randomUUID().toString();
-      var name = Name.apply(id);
 
       context.getScheduler()
-         .schedule(name, schedule.getCron(), () ->
+         .schedule(id, schedule.getCron(), () ->
             actor.getSelf().tell(Start.apply(
                schedule.isQueue(), schedule.getProperties(),
                actor.getSystem().ignoreRef(), actor.getSystem().ignoreRef())))
@@ -61,7 +59,7 @@ public abstract class State<P, C> {
                log.warn("An exception occurred while scheduling a jb execution", exception);
             } else {
                actor.getSelf().tell(Scheduled.apply(
-                  name, schedule.getCron(), schedule.getProperties(),
+                  id, schedule.getCron(), schedule.getProperties(),
                   schedule.isQueue(), schedule.getReplyTo()));
             }
          });
@@ -81,7 +79,7 @@ public abstract class State<P, C> {
                   scheduled.getProperties(), scheduled.isQueue(),
                   scheduled.getCron(), d.getNextExecution())),
                () ->
-                  log.warn("Received no job details from scheduler for scheduled execution `{}`", scheduled.getName().getValue()));
+                  log.warn("Received no job details from scheduler for scheduled execution `{}`", scheduled.getName()));
          }
       });
    }
@@ -89,7 +87,7 @@ public abstract class State<P, C> {
    public void onStatus(Status<P, C> status) {
       context.getSchedule().thenAccept(schedule -> {
          var result = JobStatus.apply(
-            context.getJobDefinition().getName().getValue(),
+            context.getJobDefinition().getName(),
             state, context.getQueue().size());
 
          status.getReplyTo().tell(result);
@@ -103,7 +101,7 @@ public abstract class State<P, C> {
             context.getJobDefinition().getMonitors().getStatus(),
             getCurrentContext(),
             (schedule, details, ctx) -> JobStatusDetails.apply(
-               context.getJobDefinition().getName().getValue(),
+               context.getJobDefinition().getName(),
                state,
                ctx,
                null,
@@ -113,7 +111,7 @@ public abstract class State<P, C> {
          .whenComplete((details, ex) -> {
             if (ex != null) {
                log.warn(
-                  String.format("An exception occurred while fetching status details of job `%s`", context.getJobDefinition().getName().getValue()),
+                  String.format("An exception occurred while fetching status details of job `%s`", context.getJobDefinition().getName()),
                   ex);
             } else {
                status.getReplyTo().tell(details);
@@ -124,11 +122,11 @@ public abstract class State<P, C> {
    protected CompletionStage<C> getCurrentContext() {
       return context
          .getContextStore()
-         .<C>readLatestContext(context.getJobDefinition().getName().getValue())
+         .<C>readLatestContext(context.getJobDefinition().getName())
          .thenApply(opt -> opt.orElse(context.getJobDefinition().getInitialContext()))
          .exceptionally(ex -> {
             log.warn(String.format(
-               "An exception occurred while reading current context of job `%s`", context.getJobDefinition().getName().getValue()),
+               "An exception occurred while reading current context of job `%s`", context.getJobDefinition().getName()),
                ex);
 
             return context.getJobDefinition().getInitialContext();
@@ -138,12 +136,12 @@ public abstract class State<P, C> {
    protected void setCurrentContext(C ctx) {
       context.getContextStore()
          .saveContext(
-            context.getJobDefinition().getName().getValue(),
+            context.getJobDefinition().getName(),
             ctx)
          .whenComplete((done, ex) -> {
             if (ex != null) {
                log.warn(
-                  String.format("An exception occurred while storing job context for job `%s`", context.getJobDefinition().getName().getValue()),
+                  String.format("An exception occurred while storing job context for job `%s`", context.getJobDefinition().getName()),
                   ex);
             }
 

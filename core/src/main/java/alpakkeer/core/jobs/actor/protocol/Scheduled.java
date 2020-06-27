@@ -3,7 +3,6 @@ package alpakkeer.core.jobs.actor.protocol;
 import akka.actor.typed.ActorRef;
 import alpakkeer.core.jobs.model.ScheduledExecution;
 import alpakkeer.core.scheduler.model.CronExpression;
-import alpakkeer.core.values.Name;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
@@ -11,7 +10,7 @@ import lombok.Value;
 @AllArgsConstructor(staticName = "apply")
 public class Scheduled<P, C> implements Message<P, C> {
 
-   Name name;
+   String name;
 
    CronExpression cron;
 

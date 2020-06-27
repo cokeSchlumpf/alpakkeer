@@ -10,7 +10,6 @@ import alpakkeer.core.monitoring.values.Marker;
 import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -48,7 +47,7 @@ public final class InMemoryMetricsCollector implements MetricsCollector {
    public void run(RuntimeConfiguration runtime) {
       this.system = runtime.getSystem();
 
-      Name jobName = Name.apply("alpakkeer-internal-collectors-in-memory");
+      var jobName = "alpakkeer-internal-collectors-in-memory";
 
       runtime
          .getScheduler()

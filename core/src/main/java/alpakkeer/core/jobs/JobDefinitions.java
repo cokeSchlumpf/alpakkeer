@@ -13,7 +13,6 @@ import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
-import alpakkeer.core.values.Name;
 import alpakkeer.core.values.Nothing;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -87,7 +86,7 @@ public final class JobDefinitions {
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class JobRunnableConfiguration<P, C> {
 
-      private final Name name;
+      private final String name;
 
       private final RuntimeConfiguration runtimeConfiguration;
 
@@ -96,7 +95,7 @@ public final class JobDefinitions {
       private final JobMonitorGroup<P, C> monitors;
 
       public static <P, C> JobRunnableConfiguration<P, C> apply(
-         Name name, RuntimeConfiguration runtimeConfiguration,
+         String name, RuntimeConfiguration runtimeConfiguration,
          JobTypeConfiguration<P, C> jobTypes) {
 
          return apply(name, runtimeConfiguration, jobTypes, JobMonitorGroup.apply());
@@ -119,7 +118,7 @@ public final class JobDefinitions {
       }
 
       public JobSettingsConfiguration<P, C> runScalaGraph(Function3<String, P, C, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
-         return runGraph((s, p, c) -> run.apply(s, p, c).mapMaterializedValue(FutureConverters::<C>toJava).asJava());
+         return runGraph((s, p, c) -> run.apply(s, p, c).mapMaterializedValue(FutureConverters::toJava).asJava());
       }
 
       public JobSettingsConfiguration<P, C> runGraph(Function4<String, P, C, StreamBuilder, RunnableGraph<CompletionStage<C>>> run) {
@@ -146,7 +145,7 @@ public final class JobDefinitions {
       }
 
       public JobSettingsConfiguration<P, C> runScalaGraph(Function2<String, P, akka.stream.scaladsl.RunnableGraph<Future<C>>> run) {
-         return runGraph((s, p) -> run.apply(s, p).mapMaterializedValue(FutureConverters::<C>toJava).asJava());
+         return runGraph((s, p) -> run.apply(s, p).mapMaterializedValue(FutureConverters::toJava).asJava());
       }
 
       public JobSettingsConfiguration<P, C> run(Procedure2<String, P> run) {
@@ -164,7 +163,7 @@ public final class JobDefinitions {
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
    public static class JobSettingsConfiguration<P, C> {
 
-      private final Name name;
+      private final String name;
 
       private final RuntimeConfiguration runtimeConfiguration;
 
@@ -181,12 +180,12 @@ public final class JobDefinitions {
       private Logger logger;
 
       public static <P, C> JobSettingsConfiguration<P, C> apply(
-         Name name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
+         String name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
          Function3<String, P, C, CompletionStage<JobHandle<C>>> run, JobMonitorGroup<P, C> monitors) {
 
          var logger = LoggerFactory.getLogger(String.format(
             "alpakkeer.jobs.%s",
-            Strings.convert(name.getValue()).toSnakeCase()));
+            Strings.convert(name).toSnakeCase()));
 
          return apply(
             name, runtimeConfiguration, jobTypes, run, monitors,
@@ -214,11 +213,11 @@ public final class JobDefinitions {
       }
 
       public JobSettingsConfiguration<P, C> withLoggingMonitor() {
-         return withMonitor(LoggingJobMonitor.apply(name.getValue(), logger, runtimeConfiguration.getObjectMapper()));
+         return withMonitor(LoggingJobMonitor.apply(name, logger, runtimeConfiguration.getObjectMapper()));
       }
 
       public JobSettingsConfiguration<P, C> withPrometheusMonitor() {
-         return withMonitor(PrometheusJobMonitor.apply(name.getValue(), runtimeConfiguration.getCollectorRegistry()));
+         return withMonitor(PrometheusJobMonitor.apply(name, runtimeConfiguration.getCollectorRegistry()));
       }
 
       public JobSettingsConfiguration<P, C> withMonitor(JobMonitor<P, C> monitor) {
@@ -251,7 +250,7 @@ public final class JobDefinitions {
    @AllArgsConstructor(staticName = "apply")
    static class SimpleJobDefinition<P, C> implements JobDefinition<P, C> {
 
-      private final Name name;
+      private final String name;
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
@@ -281,7 +280,7 @@ public final class JobDefinitions {
       }
 
       @Override
-      public Name getName() {
+      public String getName() {
          return name;
       }
 
@@ -308,7 +307,7 @@ public final class JobDefinitions {
    }
 
    public <P, C> JobRunnableConfiguration<P, C> create(String name, Function<JobTypeConfiguration<Nothing, Done>, JobTypeConfiguration<P, C>> cfg) {
-      return JobRunnableConfiguration.apply(Name.apply(name), runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
+      return JobRunnableConfiguration.apply(name, runtimeConfiguration, cfg.apply(JobTypeConfiguration.apply()));
    }
 
    public <P, C> JobRunnableConfiguration<P, C> create(String name, P defaultProperties, C initialContext) {

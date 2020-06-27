@@ -7,7 +7,6 @@ import alpakkeer.core.jobs.model.JobStatusDetails;
 import alpakkeer.core.resources.Resources;
 import alpakkeer.core.util.Json;
 import alpakkeer.core.util.Operators;
-import alpakkeer.core.values.Name;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.http.Handler;
 import io.javalin.http.NotFoundResponse;
@@ -68,7 +67,7 @@ public final class JobsResource {
 
 
       return OpenApiBuilder.documented(docs, ctx -> {
-         var name = Name.apply(ctx.pathParam(PARAM_NAME));
+         var name = ctx.pathParam(PARAM_NAME);
 
          resources.findJob(name).ifPresentOrElse(
             job -> ctx.json(job.getStatusDetails().toCompletableFuture()),
@@ -91,7 +90,7 @@ public final class JobsResource {
 
 
       return OpenApiBuilder.documented(docs, ctx -> {
-         var name = Name.apply(ctx.pathParam(PARAM_NAME));
+         var name = ctx.pathParam(PARAM_NAME);
 
          resources.findJob(name).ifPresentOrElse(
             job -> ctx.json(StartExecution.apply(true, job.getDefinition().getDefaultProperties())),
@@ -115,13 +114,13 @@ public final class JobsResource {
          .result("425", List.of(), r -> r.setDescription("If the job is already running and queue was set to False"));
 
       return OpenApiBuilder.documented(docs, ctx -> {
-         var name = Name.apply(ctx.pathParam(PARAM_NAME));
+         var name = ctx.pathParam(PARAM_NAME);
 
          resources.findJob(name).ifPresentOrElse(
             job -> {
                var json = ctx.body();
                var request = Json.apply(om).deserializeGenericClassFromJson(json, StartExecution.class, job.getDefinition().getDefaultProperties().getClass());
-               var result = ((Job<Object, Object>) job).start(request.getProperties(), request.isQueue());
+               var result = ((Job<Object, Object>) job).start(request.isQueue(), request.getProperties());
 
                result.whenComplete((done, ex) -> {
                   if (ex != null && Operators.isCause(AlreadyRunningException.class, ex)) {
@@ -150,7 +149,7 @@ public final class JobsResource {
          .result("200");
 
       return OpenApiBuilder.documented(docs, ctx -> {
-         var name = Name.apply(ctx.pathParam(PARAM_NAME));
+         var name = ctx.pathParam(PARAM_NAME);
          var clearQueue = ctx.queryParam("clear") != null;
 
          resources.findJob(name).ifPresentOrElse(
@@ -160,8 +159,8 @@ public final class JobsResource {
       });
    }
 
-   private void notFound(Name name) {
-      throw new NotFoundResponse(String.format("No job found with name `%s`", name.getValue()));
+   private void notFound(String name) {
+      throw new NotFoundResponse(String.format("No job found with name `%s`", name));
    }
 
 

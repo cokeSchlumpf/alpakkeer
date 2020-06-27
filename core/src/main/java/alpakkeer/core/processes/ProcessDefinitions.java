@@ -15,7 +15,6 @@ import alpakkeer.core.processes.monitor.ProcessMonitorGroup;
 import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.util.Operators;
 import alpakkeer.core.util.Strings;
-import alpakkeer.core.values.Name;
 import com.google.common.collect.Lists;
 import io.javalin.Javalin;
 import lombok.AllArgsConstructor;
@@ -192,8 +191,8 @@ public final class ProcessDefinitions {
       }
 
       @Override
-      public Name getName() {
-         return Name.apply(name);
+      public String getName() {
+         return name;
       }
 
       @Override

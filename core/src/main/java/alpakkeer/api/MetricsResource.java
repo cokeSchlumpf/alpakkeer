@@ -211,7 +211,7 @@ public final class MetricsResource {
             .getMetricsMonitors()
             .getMarkerMetrics()
             .stream()
-            .map(m -> Tuple2.apply(job.getDefinition().getName().getValue(), m)))
+            .map(m -> Tuple2.apply(job.getDefinition().getName(), m)))
          .map(t -> {
             var jobName = t._1();
             var metricName = t._2().getName();
@@ -249,7 +249,7 @@ public final class MetricsResource {
             .getMetricsMonitors()
             .getTimeSeriesMetrics()
             .stream()
-            .map(m -> Tuple2.apply(job.getDefinition().getName().getValue(), m)))
+            .map(m -> Tuple2.apply(job.getDefinition().getName(), m)))
          .map(t -> {
             var jobName = t._1();
             var metricName = t._2().getName();

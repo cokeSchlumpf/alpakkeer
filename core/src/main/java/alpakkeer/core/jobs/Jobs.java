@@ -41,7 +41,7 @@ public final class Jobs {
       }
 
       @Override
-      public CompletionStage<CompletionStage<C>> start(P properties, Boolean queue) {
+      public CompletionStage<CompletionStage<C>> start(Boolean queue, P properties) {
          return patterns.ask(actor, (replyTo, errorTo) -> Start.apply(queue, properties, replyTo, errorTo));
       }
 
@@ -51,7 +51,7 @@ public final class Jobs {
       }
 
       @Override
-      public CompletionStage<ScheduledExecution<P>> schedule(P properties, Boolean queue, CronExpression cron) {
+      public CompletionStage<ScheduledExecution<P>> schedule(CronExpression cron, Boolean queue, P properties) {
          return patterns.ask(actor, replyTo -> Schedule.apply(cron, properties, queue, replyTo));
       }
 
@@ -69,22 +69,22 @@ public final class Jobs {
 
    public static <P, C> Job<P, C> apply(ActorSystem system, CronScheduler scheduler, ContextStore contextStore, JobDefinition<P, C> definition) {
       var behavior = JobActor.apply(definition, scheduler, contextStore);
-      var actor = Adapter.spawn(system, behavior, definition.getName().getValue());
+      var actor = Adapter.spawn(system, behavior, definition.getName());
       var actorJob = ActorJob.apply(definition, actor, ActorPatterns.apply(system));
 
       definition.getSchedule().forEach(s -> actorJob
-         .schedule(s.getProperties(), s.isQueue(), s.getCron())
+         .schedule(s.getCron(), s.isQueue(), s.getProperties())
          .whenComplete((scheduled, exception) -> {
             if (exception != null) {
                LOG.warn(
                   String.format(
                      "Exception occurred while scheduling execution for job `%s` with cron `%s`",
-                     definition.getName().getValue(), s.getCron().getValue()),
+                     definition.getName(), s.getCron().getValue()),
                   exception);
             } else {
                LOG.info(
                   "Scheduled execution for job `{}` for `{}`, next execution is `{}`",
-                  definition.getName().getValue(), s.getCron().getValue(), scheduled.getNextExecution());
+                  definition.getName(), s.getCron().getValue(), scheduled.getNextExecution());
             }
          }));
 

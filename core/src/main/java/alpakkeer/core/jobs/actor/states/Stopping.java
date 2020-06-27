@@ -50,7 +50,7 @@ public final class Stopping<P, C> extends State<P, C> {
       } else {
          var ex = new NoSuchElementException(String.format(
             "Job `%s` did not return a result after stopping execution `%s`",
-            context.getJobDefinition().getName().getValue(),
+            context.getJobDefinition().getName(),
             currentExecution.getCurrentExecution().getId()));
 
          context.getJobDefinition().getMonitors().onStopped(

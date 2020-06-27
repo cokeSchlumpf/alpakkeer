@@ -9,7 +9,6 @@ import alpakkeer.core.monitoring.values.TimeSeries;
 import alpakkeer.core.processes.Process;
 import alpakkeer.core.processes.ProcessDefinition;
 import alpakkeer.core.processes.Processes;
-import alpakkeer.core.values.Name;
 import com.google.common.collect.Maps;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,7 +27,7 @@ public final class Resources {
 
    private final RuntimeConfiguration runtime;
 
-   private final Map<Name, Job<?, ?>> jobs;
+   private final Map<String, Job<?, ?>> jobs;
 
    private final Map<String, Process> processes;
 
@@ -79,18 +78,18 @@ public final class Resources {
     * @return The process instance
     */
    public Process addProcess(ProcessDefinition processDefinition) {
-      if (processes.containsKey(processDefinition.getName().getValue())) {
+      if (processes.containsKey(processDefinition.getName())) {
          throw ProcessAlreadyExistsException.apply(processDefinition.getName());
       } else {
          var process = Processes.apply(runtime.getSystem(), processDefinition);
          process.getDefinition().extendApi(runtime.getApp(), process);
-         processes.put(processDefinition.getName().getValue(), process);
+         processes.put(processDefinition.getName(), process);
          return process;
       }
    }
 
    /**
-    * Like {{@link Resources#findJob(Name)}} but will throw {@link JobNotFoundException} if job is not found.
+    * Like {{@link Resources#findJob(String)}} but will throw {@link JobNotFoundException} if job is not found.
     *
     * @param name The name of the job
     * @param <P> The property type of the job
@@ -99,7 +98,7 @@ public final class Resources {
     */
    @SuppressWarnings("unchecked")
    public <P, C> Job<P, C> getJob(String name) {
-      return (Job<P, C>) findJob(Name.apply(name)).orElseThrow(() -> JobNotFoundException.apply(name));
+      return (Job<P, C>) findJob(name).orElseThrow(() -> JobNotFoundException.apply(name));
    }
 
    /**
@@ -114,7 +113,7 @@ public final class Resources {
     */
    @SuppressWarnings("unchecked")
    public <P, C> Job<P, C> getJob(String name, Class<P> pType, Class<C> cType) {
-      return (Job<P, C>) findJob(Name.apply(name)).orElseThrow(() -> JobNotFoundException.apply(name));
+      return (Job<P, C>) findJob(name).orElseThrow(() -> JobNotFoundException.apply(name));
    }
 
    /**
@@ -126,7 +125,7 @@ public final class Resources {
       return jobs
          .values()
          .stream()
-         .sorted(Comparator.comparing(j -> j.getDefinition().getName().getValue()))
+         .sorted(Comparator.comparing(j -> j.getDefinition().getName()))
          .collect(Collectors.toList());
    }
 
@@ -136,7 +135,7 @@ public final class Resources {
     * @param name The name of the job
     * @return Maybe a job or None of not found
     */
-   public Optional<Job<?, ?>> findJob(Name name) {
+   public Optional<Job<?, ?>> findJob(String name) {
       return Optional.ofNullable(jobs.get(name));
    }
 
@@ -158,7 +157,7 @@ public final class Resources {
       return processes
          .values()
          .stream()
-         .sorted(Comparator.comparing(p -> p.getDefinition().getName().getValue()))
+         .sorted(Comparator.comparing(p -> p.getDefinition().getName()))
          .collect(Collectors.toList());
    }
 
