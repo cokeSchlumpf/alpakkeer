@@ -10,6 +10,9 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class AlpakkeerTest {
 
    @Test
@@ -68,9 +71,9 @@ public class AlpakkeerTest {
 
       Thread.sleep(2000);
 
-      assert (list.contains("Hallo"));
-      assert (list.contains("Welt"));
-      assert (list.size() == 2);
+      assertTrue(list.contains("Hallo"));
+      assertTrue(list.contains("Welt"));
+      assertEquals(2, list.size());
    }
 
 }
