@@ -80,7 +80,7 @@ public final class InMemoryStreamMessagingAdapter implements StreamMessagingAdap
    }
 
    @Override
-   public <R extends Record> CompletionStage<Optional<RecordEnvelope<R, CommittableRecordContext>>> getDocument(String topic, Class<R> recordType) {
+   public <R extends Record> CompletionStage<Optional<RecordEnvelope<R, CommittableRecordContext>>> get(String topic, Class<R> recordType) {
       return CompletableFuture.completedFuture(getDocument$internal(topic, recordType));
    }
 

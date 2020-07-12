@@ -139,8 +139,8 @@ public final class AlpakkeerBuilder {
     * @param builder A factory method which creates the ProcessDefinition
     * @return The current builder instance
     */
-   public AlpakkeerBuilder withProcess(Function<ProcessDefinitions, ProcessDefinition> builder) {
-      processes.add(builder);
+   public AlpakkeerBuilder withProcess(Function<ProcessDefinitions, ProcessDefinitions.ProcessDefinitionBuilder> builder) {
+      processes.add(p -> builder.apply(p).build());
       return this;
    }
 

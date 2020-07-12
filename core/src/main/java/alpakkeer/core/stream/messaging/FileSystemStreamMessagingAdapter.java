@@ -90,7 +90,7 @@ public final class FileSystemStreamMessagingAdapter implements StreamMessagingAd
    }
 
    @Override
-   public <R extends Record> CompletionStage<Optional<RecordEnvelope<R, CommittableRecordContext>>> getDocument(String topic, Class<R> recordType) {
+   public <R extends Record> CompletionStage<Optional<RecordEnvelope<R, CommittableRecordContext>>> get(String topic, Class<R> recordType) {
       return CompletableFuture.completedFuture(Operators.suppressExceptions(() -> Files
          .list(getDirectory(topic))
          .map(path -> getDocument$internal(path, recordType))
