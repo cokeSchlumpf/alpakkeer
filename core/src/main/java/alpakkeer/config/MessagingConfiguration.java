@@ -10,10 +10,16 @@ import lombok.NoArgsConstructor;
 @ConfigurationProperties
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
 @AllArgsConstructor(staticName = "apply")
-public final class ServerConfiguration {
+public final class MessagingConfiguration {
 
-   private final String hostname;
+   /**
+    * Specifies the used messaging-configuration type.
+    * Possible values: in-memory, fs, kafka
+    */
+   private final String type;
 
-   private final int port;
+   private final FileSystemStreamMessagingConfiguration fs;
+
+   private final KafkaMessagingAdapterConfiguration kafka;
 
 }

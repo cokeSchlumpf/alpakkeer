@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @ConfigurationProperties
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(staticName = "apply")
 public final class AlpakkeerConfiguration {
 
    private final String name;
@@ -24,6 +24,8 @@ public final class AlpakkeerConfiguration {
    private final boolean showBanner;
 
    private final ServerConfiguration api;
+
+   private final MessagingConfiguration messaging;
 
    public static AlpakkeerConfiguration apply() {
       return Configs.mapToConfigClass(AlpakkeerConfiguration.class, "alpakkeer");

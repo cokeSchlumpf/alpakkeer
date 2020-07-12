@@ -2,7 +2,6 @@ package alpakkeer;
 
 import alpakkeer.api.AlpakkeerAPI;
 import alpakkeer.config.AlpakkeerConfiguration;
-import alpakkeer.config.RuntimeConfiguration;
 import alpakkeer.core.resources.Resources;
 import alpakkeer.core.util.Templates;
 import com.google.common.collect.ImmutableMap;
@@ -19,7 +18,7 @@ public final class Alpakkeer {
 
    private static final Logger LOG = LoggerFactory.getLogger(Alpakkeer.class);
 
-   private final RuntimeConfiguration runtimeConfiguration;
+   private final AlpakkeerRuntime runtimeConfiguration;
 
    private final Resources resources;
 
@@ -32,7 +31,7 @@ public final class Alpakkeer {
     * @param resources            Initial resources for Alpakkeer
     * @return The new alpakkeer instance
     */
-   static Alpakkeer apply(AlpakkeerConfiguration config, RuntimeConfiguration runtimeConfiguration, Resources resources) {
+   static Alpakkeer apply(AlpakkeerConfiguration config, AlpakkeerRuntime runtimeConfiguration, Resources resources) {
       var api = AlpakkeerAPI.apply(runtimeConfiguration, resources);
 
       if (runtimeConfiguration.getConfiguration().isShowBanner()) {

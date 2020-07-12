@@ -1,12 +1,15 @@
-package alpakkeer.config;
+package alpakkeer;
 
 import akka.actor.ActorSystem;
 import alpakkeer.api.AlpakkeerOpenApi;
+import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.jobs.ContextStores;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.scheduler.CronSchedulers;
+import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
+import alpakkeer.core.stream.messaging.StreamMessagingAdapters;
 import alpakkeer.core.util.ObjectMapperFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
@@ -19,7 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 @AllArgsConstructor(staticName = "apply", access = AccessLevel.PRIVATE)
-public class RuntimeConfigurationBuilder {
+public final class AlpakkeerRuntimeBuilder {
 
    Javalin app;
 
@@ -35,47 +38,53 @@ public class RuntimeConfigurationBuilder {
 
    CronScheduler scheduler;
 
-   public static RuntimeConfigurationBuilder apply() {
-      return apply(null, null, null, null, null, Lists.newArrayList(), null);
+   StreamMessagingAdapter streamMessagingAdapter;
+
+   public static AlpakkeerRuntimeBuilder apply() {
+      return apply(null, null, null, null, null, Lists.newArrayList(), null, null);
    }
 
-   public RuntimeConfigurationBuilder addMetricsCollector(MetricsCollector collector) {
+   public AlpakkeerRuntimeBuilder addMetricsCollector(MetricsCollector collector) {
       metricsCollectors.add(collector);
       return this;
    }
 
-   public RuntimeConfigurationBuilder withJavalinApp(Javalin app) {
+   public AlpakkeerRuntimeBuilder withJavalinApp(Javalin app) {
       this.app = app;
       return this;
    }
 
-   public RuntimeConfigurationBuilder withActorSystem(ActorSystem system) {
+   public AlpakkeerRuntimeBuilder withActorSystem(ActorSystem system) {
       this.system = system;
       return this;
    }
 
-   public RuntimeConfigurationBuilder withObjectMapper(ObjectMapper om) {
+   public AlpakkeerRuntimeBuilder withObjectMapper(ObjectMapper om) {
       this.objectMapper = om;
       return this;
    }
 
-   public RuntimeConfigurationBuilder withCollectorRegistry(CollectorRegistry collectorRegistry) {
+   public AlpakkeerRuntimeBuilder withCollectorRegistry(CollectorRegistry collectorRegistry) {
       this.collectorRegistry = collectorRegistry;
       return this;
    }
 
-   public RuntimeConfigurationBuilder withContextStore(ContextStore contextStore) {
+   public AlpakkeerRuntimeBuilder withContextStore(ContextStore contextStore) {
       this.contextStore = contextStore;
       return this;
    }
 
-   public RuntimeConfigurationBuilder withScheduler(CronScheduler scheduler) {
+   public AlpakkeerRuntimeBuilder withScheduler(CronScheduler scheduler) {
       this.scheduler = scheduler;
       return this;
    }
 
-   public RuntimeConfiguration build(AlpakkeerConfiguration config) {
-      return RuntimeConfiguration.apply(
+   public AlpakkeerRuntime build(AlpakkeerConfiguration config) {
+      var objectMapper = Optional.ofNullable(this.objectMapper).orElseGet(() -> ObjectMapperFactory.apply().create(true));
+      var streamMessaging = Optional.ofNullable(this.streamMessagingAdapter).orElseGet(() ->
+         StreamMessagingAdapters.createFromConfiguration(objectMapper, config.getMessaging()));
+
+      return AlpakkeerRuntime.apply(
          Optional.ofNullable(app).orElseGet(() -> Javalin
             .create(cfg -> {
                cfg.showJavalinBanner = false;
@@ -85,11 +94,12 @@ public class RuntimeConfigurationBuilder {
             .start(config.getApi().getHostname(), config.getApi().getPort())),
          config,
          Optional.ofNullable(system).orElseGet(() -> ActorSystem.apply("alpakkeer")),
-         Optional.ofNullable(objectMapper).orElseGet(() -> ObjectMapperFactory.apply().create(true)),
+         objectMapper,
          Optional.ofNullable(collectorRegistry).orElse(CollectorRegistry.defaultRegistry),
          Optional.ofNullable(contextStore).orElseGet(() -> ContextStores.apply().create()),
          List.copyOf(metricsCollectors),
-         Optional.ofNullable(scheduler).orElseGet(CronSchedulers::apply));
+         Optional.ofNullable(scheduler).orElseGet(CronSchedulers::apply),
+         streamMessaging);
    }
 
 }

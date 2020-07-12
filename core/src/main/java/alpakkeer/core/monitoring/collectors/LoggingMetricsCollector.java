@@ -1,6 +1,6 @@
 package alpakkeer.core.monitoring.collectors;
 
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.monitoring.values.Marker;
@@ -22,7 +22,7 @@ public final class LoggingMetricsCollector implements MetricsCollector {
    CronExpression interval;
 
    @Override
-   public void run(RuntimeConfiguration runtime) {
+   public void run(AlpakkeerRuntime runtime) {
       var jobName = "alpakkeer-internal-collectors-logging";
       runtime
          .getScheduler()

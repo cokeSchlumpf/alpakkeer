@@ -1,6 +1,6 @@
 package alpakkeer.core.resources;
 
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.jobs.Job;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.Jobs;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Resources {
 
-   private final RuntimeConfiguration runtime;
+   private final AlpakkeerRuntime runtime;
 
    private final Map<String, Job<?, ?>> jobs;
 
@@ -39,7 +39,7 @@ public final class Resources {
     * @param runtime Alpakkeer's runtime configuration.
     * @return A new resources instance.
     */
-   public static Resources apply(RuntimeConfiguration runtime) {
+   public static Resources apply(AlpakkeerRuntime runtime) {
       return new Resources(runtime, Maps.newHashMap(), Maps.newHashMap(), Maps.newHashMap());
    }
 

@@ -1,9 +1,9 @@
 package alpakkeer.core.monitoring;
 
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 
 public interface MetricsCollector extends MetricsMonitor {
 
-   void run(RuntimeConfiguration runtime);
+   void run(AlpakkeerRuntime runtime);
 
 }

@@ -1,6 +1,6 @@
 package alpakkeer.api;
 
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.values.Marker;
 import alpakkeer.core.monitoring.values.TimeSeries;
@@ -31,7 +31,7 @@ public final class MetricsResource {
 
    private final Resources resources;
 
-   private final RuntimeConfiguration runtimeConfiguration;
+   private final AlpakkeerRuntime runtimeConfiguration;
 
    public Handler getAnnotationsHeader() {
       return ctx -> {

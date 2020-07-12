@@ -4,7 +4,7 @@ import akka.Done;
 import akka.japi.Procedure;
 import akka.japi.function.Procedure2;
 import akka.stream.javadsl.RunnableGraph;
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.*;
 import alpakkeer.core.scheduler.model.CronExpression;
@@ -33,7 +33,7 @@ import java.util.function.Function;
 @AllArgsConstructor(staticName = "apply")
 public final class JobDefinitions {
 
-   private RuntimeConfiguration runtimeConfiguration;
+   private AlpakkeerRuntime runtimeConfiguration;
 
    /**
     * A simple builder to configure property and context of a job definition.
@@ -94,7 +94,7 @@ public final class JobDefinitions {
 
       private final String name;
 
-      private final RuntimeConfiguration runtimeConfiguration;
+      private final AlpakkeerRuntime runtimeConfiguration;
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
@@ -111,7 +111,7 @@ public final class JobDefinitions {
        * @return A new instance
        */
       public static <P, C> JobRunnableConfiguration<P, C> apply(
-         String name, RuntimeConfiguration runtimeConfiguration,
+         String name, AlpakkeerRuntime runtimeConfiguration,
          JobTypeConfiguration<P, C> jobTypes) {
 
          return apply(name, runtimeConfiguration, jobTypes, JobMonitorGroup.apply());
@@ -225,7 +225,7 @@ public final class JobDefinitions {
 
       private final String name;
 
-      private final RuntimeConfiguration runtimeConfiguration;
+      private final AlpakkeerRuntime runtimeConfiguration;
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
@@ -252,7 +252,7 @@ public final class JobDefinitions {
        * @return A new instance
        */
       public static <P, C> JobSettingsConfiguration<P, C> apply(
-         String name, RuntimeConfiguration runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
+         String name, AlpakkeerRuntime runtimeConfiguration, JobTypeConfiguration<P, C> jobTypes,
          Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run, JobMonitorGroup<P, C> monitors) {
 
          var logger = LoggerFactory.getLogger(String.format(
@@ -402,7 +402,7 @@ public final class JobDefinitions {
 
       private final List<Procedure2<Javalin, Job<P, C>>> apiExtensions;
 
-      private final RuntimeConfiguration runtime;
+      private final AlpakkeerRuntime runtime;
 
       @Override
       public void extendApi(Javalin api, Job<P, C> jobInstance) {
@@ -441,7 +441,7 @@ public final class JobDefinitions {
 
       @Override
       public CompletionStage<JobHandle<C>> run(String executionId, P properties, C context) {
-         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(monitors, executionId, properties, context, runtime)));
+         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(runtime, monitors, executionId, properties, context)));
       }
 
    }
@@ -509,7 +509,7 @@ public final class JobDefinitions {
     *
     * @return The initialized Alpakkeer runtime
     */
-   public RuntimeConfiguration getRuntime() {
+   public AlpakkeerRuntime getRuntime() {
       return runtimeConfiguration;
    }
 

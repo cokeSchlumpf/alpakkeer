@@ -16,7 +16,7 @@ public class AlpakkeerTest {
          .withJob(
             jobs -> jobs
                .create("hello-world")
-               .runGraph((id, context) -> Source
+               .runGraph(sb -> Source
                   .single("Hello World")
                   .toMat(Sink.foreach(System.out::println), Keep.right()))
                .withLoggingMonitor())

@@ -6,7 +6,7 @@ import akka.japi.function.Function;
 import akka.japi.function.Procedure2;
 import akka.stream.UniqueKillSwitch;
 import akka.stream.javadsl.RunnableGraph;
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.jobs.monitor.LoggingJobMonitor;
 import alpakkeer.core.processes.monitor.LoggingProcessMonitor;
 import alpakkeer.core.processes.monitor.ProcessMonitor;
@@ -31,14 +31,14 @@ import java.util.concurrent.CompletionStage;
 @AllArgsConstructor(staticName = "apply")
 public final class ProcessDefinitions {
 
-   private final RuntimeConfiguration runtimeConfiguration;
+   private final AlpakkeerRuntime runtimeConfiguration;
 
    @AllArgsConstructor(staticName = "apply", access = AccessLevel.PROTECTED)
    public static class ProcessRunnableBuilder {
 
       private final String name;
 
-      private final RuntimeConfiguration runtime;
+      private final AlpakkeerRuntime runtime;
 
       /**
        * Create a process execution factory which returns a completion stage of {@link java.lang.ProcessHandle}. The
@@ -104,7 +104,7 @@ public final class ProcessDefinitions {
 
       private final Function<ProcessStreamBuilder, CompletionStage<ProcessHandle>> runner;
 
-      private final RuntimeConfiguration runtime;
+      private final AlpakkeerRuntime runtime;
 
       private Duration initialRetryBackoff;
 
@@ -121,7 +121,7 @@ public final class ProcessDefinitions {
       private List<Procedure2<Javalin, Process>> apiExtensions;
 
       static ProcessDefinitionBuilder apply(
-         String name, Function<ProcessStreamBuilder, CompletionStage<ProcessHandle>> runner, RuntimeConfiguration runtime) {
+         String name, Function<ProcessStreamBuilder, CompletionStage<ProcessHandle>> runner, AlpakkeerRuntime runtime) {
          var logger = LoggerFactory.getLogger(String.format(
             "alpakkeer.processes.%s",
             Strings.convert(name).toSnakeCase()));
@@ -256,7 +256,7 @@ public final class ProcessDefinitions {
 
       private final List<Procedure2<Javalin, Process>> apiExtensions;
 
-      private final RuntimeConfiguration runtime;
+      private final AlpakkeerRuntime runtime;
 
       @Override
       public void extendApi(Javalin api, Process processInstance) {
@@ -300,7 +300,7 @@ public final class ProcessDefinitions {
 
       @Override
       public CompletionStage<ProcessHandle> run(String executionId) {
-         return Operators.suppressExceptions(() -> runner.apply(ProcessStreamBuilder.apply(getMonitors(), executionId, runtime)));
+         return Operators.suppressExceptions(() -> runner.apply(ProcessStreamBuilder.apply(runtime, getMonitors(), executionId)));
       }
 
    }
@@ -320,7 +320,7 @@ public final class ProcessDefinitions {
     *
     * @return The initialized Alpakkeer runtime
     */
-   public RuntimeConfiguration getRuntime() {
+   public AlpakkeerRuntime getRuntime() {
       return runtimeConfiguration;
    }
 

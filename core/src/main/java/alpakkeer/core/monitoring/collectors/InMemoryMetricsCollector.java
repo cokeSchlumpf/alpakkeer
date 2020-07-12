@@ -1,7 +1,7 @@
 package alpakkeer.core.monitoring.collectors;
 
 import akka.actor.ActorSystem;
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.Metrics;
 import alpakkeer.core.monitoring.MetricsCollector;
@@ -45,7 +45,7 @@ public final class InMemoryMetricsCollector implements MetricsCollector {
    }
 
    @Override
-   public void run(RuntimeConfiguration runtime) {
+   public void run(AlpakkeerRuntime runtime) {
       this.system = runtime.getSystem();
 
       var jobName = "alpakkeer-internal-collectors-in-memory";

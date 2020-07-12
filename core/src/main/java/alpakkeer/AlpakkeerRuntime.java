@@ -1,9 +1,11 @@
-package alpakkeer.config;
+package alpakkeer;
 
 import akka.actor.ActorSystem;
+import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.core.jobs.ContextStore;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.scheduler.CronScheduler;
+import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.prometheus.client.CollectorRegistry;
@@ -14,7 +16,7 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor(staticName = "apply")
-public final class RuntimeConfiguration {
+public final class AlpakkeerRuntime {
 
    Javalin app;
 
@@ -31,5 +33,7 @@ public final class RuntimeConfiguration {
    List<MetricsCollector> metricsCollectors;
 
    CronScheduler scheduler;
+
+   StreamMessagingAdapter messaging;
 
 }

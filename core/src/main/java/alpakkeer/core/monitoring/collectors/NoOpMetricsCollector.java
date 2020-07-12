@@ -1,6 +1,6 @@
 package alpakkeer.core.monitoring.collectors;
 
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.monitoring.values.Marker;
@@ -13,7 +13,7 @@ import java.util.List;
 public final class NoOpMetricsCollector implements MetricsCollector {
 
    @Override
-   public void run(RuntimeConfiguration runtime) {
+   public void run(AlpakkeerRuntime runtime) {
 
    }
 

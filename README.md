@@ -2,7 +2,7 @@
 
 **Note:** The project is under active development and not ready for use yet.
 
-Alpakkeer is an opinionated toolkit to build, run and monitor light-weight integration applications (not necessarily) based on [Akka Streams](https://doc.akka.io/docs/akka/current/stream/index.html) and [Alpakka](https://doc.akka.io/docs/alpakka/current/index.html). 
+Alpakkeer is an opinionated toolkit to build, run and operate light-weight integration applications based on [Akka Streams](https://doc.akka.io/docs/akka/current/stream/index.html) and [Alpakka](https://doc.akka.io/docs/alpakka/current/index.html).
 
 Alpakkeer can be used with a Java or a Scala DSL.
 
@@ -33,9 +33,9 @@ Continue with [Tutorials](#TODO) or see the detailed [Docs](#TODO) to discover m
 
 Alpakkeer bundles various libraries and components to quickly build, run and operate light-weight integration applications:
 
-* A Web Server based on [Javalin](#) to provide simple access via REST APIs to manage Akka Streams processes and expose metrics to Prometheus and Grafana. [More Details ...](#)
+* A Web Server based on [Javalin](#) to provide simple access via REST APIs to manage Akka Streams processes and expose metrics to Prometheus and Grafana.
  
-* Configuration Management based on [Typesafe Configuration](#...) including some extensions for environment-based configurations and automatic mapping to POJOs. [More Details ...](#)
+* Configuration Management based on [Lightbend Config](#...) plus some extensions for environment-based configurations and automatic mapping to POJOs.
 
 * Prometheus Client to record application and stream metrics. Alpakkeer also provides custom FlowStages to argument your stream with Akka Streams specific metrics. [More Details ...](#)
 

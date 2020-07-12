@@ -6,8 +6,6 @@ import akka.japi.function.Procedure;
 import akka.japi.function.Procedure2;
 import akka.japi.function.Procedure3;
 import alpakkeer.config.AlpakkeerConfiguration;
-import alpakkeer.config.RuntimeConfiguration;
-import alpakkeer.config.RuntimeConfigurationBuilder;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.JobDefinitions;
 import alpakkeer.core.monitoring.MetricStore;
@@ -29,18 +27,18 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AlpakkeerBuilder {
 
-   private List<Procedure3<Javalin, RuntimeConfiguration, Resources>> apiExtensions;
+   private List<Procedure3<Javalin, AlpakkeerRuntime, Resources>> apiExtensions;
 
    private List<Function<JobDefinitions, JobDefinition<?, ?>>> jobs;
 
    private List<Function<ProcessDefinitions, ProcessDefinition>> processes;
 
-   private List<Function2<RuntimeConfiguration, Resources, MetricStore<TimeSeries>>> tsMetrics;
+   private List<Function2<AlpakkeerRuntime, Resources, MetricStore<TimeSeries>>> tsMetrics;
 
-   private RuntimeConfigurationBuilder runtimeConfig;
+   private AlpakkeerRuntimeBuilder runtimeConfig;
 
    static AlpakkeerBuilder apply() {
-      return new AlpakkeerBuilder(Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), RuntimeConfigurationBuilder.apply());
+      return new AlpakkeerBuilder(Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), Lists.newArrayList(), AlpakkeerRuntimeBuilder.apply());
    }
 
    /**
@@ -49,7 +47,7 @@ public final class AlpakkeerBuilder {
     * @param configure A function which accepts the configuration builder
     * @return The current builder instance
     */
-   public AlpakkeerBuilder configure(Procedure<RuntimeConfigurationBuilder> configure) {
+   public AlpakkeerBuilder configure(Procedure<AlpakkeerRuntimeBuilder> configure) {
       Operators.suppressExceptions(() -> configure.apply(runtimeConfig));
       return this;
    }
@@ -68,11 +66,11 @@ public final class AlpakkeerBuilder {
    /**
     * Use this method to extend the API with custom endpoints.
     *
-    * @param apiExtension A function which takes the {@link Javalin} instance and the {@link RuntimeConfiguration}
+    * @param apiExtension A function which takes the {@link Javalin} instance and the {@link AlpakkeerRuntime}
     *                     of Alpakkeer instance
     * @return The current builder instance
     */
-   public AlpakkeerBuilder withApiEndpoint(Procedure2<Javalin, RuntimeConfiguration> apiExtension) {
+   public AlpakkeerBuilder withApiEndpoint(Procedure2<Javalin, AlpakkeerRuntime> apiExtension) {
       apiExtensions.add((j, c, r) -> apiExtension.apply(j, c));
       return this;
    }
@@ -80,11 +78,11 @@ public final class AlpakkeerBuilder {
    /**
     * Use this method to extend the API with custom endpoints.
     *
-    * @param apiExtension A function which takes the {@link Javalin} instance, the {@link RuntimeConfiguration} and
+    * @param apiExtension A function which takes the {@link Javalin} instance, the {@link AlpakkeerRuntime} and
     *                     the {@link Resources} of the Alpakkeer instance
     * @return The current builder instance
     */
-   public AlpakkeerBuilder withApiEndpoint(Procedure3<Javalin, RuntimeConfiguration, Resources> apiExtension) {
+   public AlpakkeerBuilder withApiEndpoint(Procedure3<Javalin, AlpakkeerRuntime, Resources> apiExtension) {
       apiExtensions.add(apiExtension);
       return this;
    }
@@ -116,10 +114,10 @@ public final class AlpakkeerBuilder {
    /**
     * Adds a custom time series metric to the application.
     *
-    * @param metric A function which takes the {@link RuntimeConfiguration} and returns the custom metric.
+    * @param metric A function which takes the {@link AlpakkeerRuntime} and returns the custom metric.
     * @return The current builder instance
     */
-   public AlpakkeerBuilder withTimeSeriesMetric(Function<RuntimeConfiguration, MetricStore<TimeSeries>> metric) {
+   public AlpakkeerBuilder withTimeSeriesMetric(Function<AlpakkeerRuntime, MetricStore<TimeSeries>> metric) {
       tsMetrics.add((c, r) -> metric.apply(c));
       return this;
    }
@@ -127,10 +125,10 @@ public final class AlpakkeerBuilder {
    /**
     * Adds a custom time series metric to the application.
     *
-    * @param metric A function which takes the {@link RuntimeConfiguration} and returns the custom metric.
+    * @param metric A function which takes the {@link AlpakkeerRuntime} and returns the custom metric.
     * @return The current builder instance
     */
-   public AlpakkeerBuilder withTimeSeriesMetric(Function2<RuntimeConfiguration, Resources, MetricStore<TimeSeries>> metric) {
+   public AlpakkeerBuilder withTimeSeriesMetric(Function2<AlpakkeerRuntime, Resources, MetricStore<TimeSeries>> metric) {
       tsMetrics.add(metric);
       return this;
    }

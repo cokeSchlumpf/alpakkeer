@@ -10,10 +10,8 @@ import lombok.NoArgsConstructor;
 @ConfigurationProperties
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
 @AllArgsConstructor(staticName = "apply")
-public final class ServerConfiguration {
+public final class FileSystemStreamMessagingConfiguration {
 
-   private final String hostname;
-
-   private final int port;
+   private final String directory;
 
 }

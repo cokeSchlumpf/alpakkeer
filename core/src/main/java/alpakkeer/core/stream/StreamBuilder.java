@@ -1,28 +1,20 @@
 package alpakkeer.core.stream;
 
-import akka.NotUsed;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
-import io.prometheus.client.Counter;
-
-import java.time.Duration;
+import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
 
 public interface StreamBuilder {
 
-   Sink<CheckpointMonitor.Stats, NotUsed> createCheckpointStatsSink(String name, Duration statsInterval);
+   StreamMonitoringAdapter getMonitoring();
 
-   Sink<CheckpointMonitor.Stats, NotUsed> createCheckpointStatsSink(String name);
+   StreamMessagingAdapter getMessaging();
 
-   Sink<LatencyMonitor.Stats, NotUsed> createLatencyStatsSink(String name, Duration statsInterval);
+   AlpakkeerRuntime getRuntime();
 
-   Sink<LatencyMonitor.Stats, NotUsed> createLatencyStatsSink(String name);
+   StreamMonitoringAdapter monitoring();
 
-   <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name, Duration statsInterval);
+   StreamMessagingAdapter messaging();
 
-   <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name);
-
-   <In, Out, Mat> Flow<In, Out, Mat> createLatencyMonitor(String name, Flow<In, Out, Mat> flow, Duration statsInterval);
-
-   <In, Out, Mat> Flow<In, Out, Mat> createLatencyMonitor(String name, Flow<In, Out, Mat> flow);
+   AlpakkeerRuntime runtime();
 
 }

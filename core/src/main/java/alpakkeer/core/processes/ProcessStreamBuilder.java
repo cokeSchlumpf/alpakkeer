@@ -1,67 +1,30 @@
 package alpakkeer.core.processes;
 
-import akka.NotUsed;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.processes.monitor.ProcessMonitor;
-import alpakkeer.core.stream.*;
+import alpakkeer.core.stream.StreamBuilder;
+import alpakkeer.core.stream.StreamBuilders;
+import alpakkeer.core.stream.StreamMonitoringAdapter;
+import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
 import lombok.AllArgsConstructor;
-
-import java.time.Duration;
 
 @AllArgsConstructor(staticName = "apply")
 public class ProcessStreamBuilder implements StreamBuilder {
 
-   private final ProcessMonitor monitor;
+   private final StreamBuilder sb;
 
    private final String executionId;
 
-   private final RuntimeConfiguration runtime;
+   public static ProcessStreamBuilder apply(
+      AlpakkeerRuntime runtime,
+      ProcessMonitor monitor,
+      String executionId) {
 
-   @Override
-   public Sink<CheckpointMonitor.Stats, NotUsed> createCheckpointStatsSink(String name, Duration statsInterval) {
-      return Flow.of(CheckpointMonitor.Stats.class)
-         .via(Pulse.create(statsInterval, true))
-         .to(Sink.foreach(stats -> monitor.onStats(executionId, name, stats)));
+      var monitoring = StreamMonitoringAdapter.apply(monitor, executionId);
+      var sb = StreamBuilders.common(monitoring, runtime);
+      return apply(sb, executionId);
    }
 
-   @Override
-   public Sink<CheckpointMonitor.Stats, NotUsed> createCheckpointStatsSink(String name) {
-      return createCheckpointStatsSink(name, Duration.ofSeconds(30));
-   }
-
-   @Override
-   public Sink<LatencyMonitor.Stats, NotUsed> createLatencyStatsSink(String name, Duration statsInterval) {
-      return Flow.of(LatencyMonitor.Stats.class)
-         .via(Pulse.create(statsInterval, true))
-         .to(Sink.foreach(stats -> monitor.onStats(executionId, name, stats)));
-   }
-
-   @Override
-   public Sink<LatencyMonitor.Stats, NotUsed> createLatencyStatsSink(String name) {
-      return createLatencyStatsSink(name, Duration.ofSeconds(30));
-   }
-
-   @Override
-   public <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name, Duration statsInterval) {
-      return CheckpointMonitors.create(createCheckpointStatsSink(name, statsInterval));
-   }
-
-   @Override
-   public <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name) {
-      return createCheckpointMonitor(name, Duration.ofSeconds(30));
-   }
-
-   @Override
-   public <In, Out, Mat> Flow<In, Out, Mat> createLatencyMonitor(String name, Flow<In, Out, Mat> flow, Duration statsInterval) {
-      return LatencyMonitors.create(flow, createLatencyStatsSink(name, statsInterval), (m, n) -> m);
-   }
-
-   @Override
-   public <In, Out, Mat> Flow<In, Out, Mat> createLatencyMonitor(String name, Flow<In, Out, Mat> flow) {
-      return createLatencyMonitor(name, flow, Duration.ofSeconds(30));
-   }
 
    /**
     * Returns the execution id of the current execution.
@@ -72,12 +35,37 @@ public class ProcessStreamBuilder implements StreamBuilder {
       return executionId;
    }
 
+   @Override
+   public StreamMonitoringAdapter getMonitoring() {
+      return sb.getMonitoring();
+   }
+
+   @Override
+   public StreamMessagingAdapter getMessaging() {
+      return sb.getMessaging();
+   }
+
    /**
     * Access the initialized Alpakkeer runtime.
     *
     * @return The runtime
     */
-   public RuntimeConfiguration getRuntime() {
-      return runtime;
+   public AlpakkeerRuntime getRuntime() {
+      return sb.getRuntime();
+   }
+
+   @Override
+   public StreamMonitoringAdapter monitoring() {
+      return sb.monitoring();
+   }
+
+   @Override
+   public StreamMessagingAdapter messaging() {
+      return sb.messaging();
+   }
+
+   @Override
+   public AlpakkeerRuntime runtime() {
+      return sb.runtime();
    }
 }

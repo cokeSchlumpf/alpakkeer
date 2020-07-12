@@ -1,6 +1,6 @@
 package alpakkeer.api;
 
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.resources.Resources;
 import io.javalin.Javalin;
 import io.javalin.plugin.json.JavalinJackson;
@@ -13,7 +13,7 @@ public final class AlpakkeerAPI {
    private final Javalin javalin;
 
    public static AlpakkeerAPI apply(
-      RuntimeConfiguration runtime,
+      AlpakkeerRuntime runtime,
       Resources resources) {
 
       var jobs = new JobsResource(resources, runtime.getObjectMapper());

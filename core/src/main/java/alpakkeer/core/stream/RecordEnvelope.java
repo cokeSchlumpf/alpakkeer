@@ -1,30 +1,48 @@
 package alpakkeer.core.stream;
 
+import alpakkeer.core.stream.context.NoRecordContext;
 import alpakkeer.core.stream.context.RecordContext;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Value;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-@Getter
-@AllArgsConstructor(staticName = "apply")
-public class RecordEnvelope<R, C extends RecordContext> {
+@Value
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class RecordEnvelope<R extends Record, C extends RecordContext> {
 
    @JsonIgnore
    @XmlTransient
-   private transient final C context;
+   transient C context;
 
-   private final R record;
+   R record;
 
-   private final Class<R> recordType;
+   Class<C> contextType;
 
-   public <T> RecordEnvelope<T, C> withRecord(T record, Class<T> recordType) {
-      return RecordEnvelope.apply(context, record, recordType);
+   Class<R> recordType;
+
+   public static <R extends Record, C extends RecordContext> RecordEnvelope<R, C> apply(R record, C context, Class<C> contextType, Class<R> recordType) {
+      return new RecordEnvelope<>(context, record, contextType, recordType);
    }
 
    @SuppressWarnings("unchecked")
-   public <T> RecordEnvelope<T, C> withRecord(T record) {
+   public static <R extends Record, C extends RecordContext> RecordEnvelope<R, C> apply(R record, C context) {
+      return apply(record, context, (Class<C>) context.getClass(), (Class<R>) record.getClass());
+   }
+
+   @SuppressWarnings("unchecked")
+   public static <R extends Record> RecordEnvelope<R, NoRecordContext> apply(R record) {
+      return apply(record, NoRecordContext.INSTANCE, NoRecordContext.class, (Class<R>) record.getClass());
+   }
+
+   public <T extends Record> RecordEnvelope<T, C> withRecord(T record, Class<T> recordType) {
+      return RecordEnvelope.apply(record, context, contextType, recordType);
+   }
+
+   @SuppressWarnings("unchecked")
+   public <T extends Record> RecordEnvelope<T, C> withRecord(T record) {
       return withRecord(record, (Class<T>) record.getClass());
    }
 

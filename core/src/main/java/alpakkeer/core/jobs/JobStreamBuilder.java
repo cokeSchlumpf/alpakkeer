@@ -1,19 +1,17 @@
 package alpakkeer.core.jobs;
 
-import akka.NotUsed;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Sink;
-import alpakkeer.config.RuntimeConfiguration;
+import alpakkeer.AlpakkeerRuntime;
 import alpakkeer.core.jobs.monitor.JobMonitor;
-import alpakkeer.core.stream.*;
+import alpakkeer.core.stream.StreamBuilder;
+import alpakkeer.core.stream.StreamBuilders;
+import alpakkeer.core.stream.StreamMonitoringAdapter;
+import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
 import lombok.AllArgsConstructor;
-
-import java.time.Duration;
 
 @AllArgsConstructor(staticName = "apply")
 public final class JobStreamBuilder<P, C> implements StreamBuilder {
 
-   private final JobMonitor<P, C> monitor;
+   private final StreamBuilder streamBuilder;
 
    private final String executionId;
 
@@ -21,51 +19,16 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
 
    private final C context;
 
-   private final RuntimeConfiguration runtime;
+   public static <P, C> JobStreamBuilder<P, C> apply(
+      AlpakkeerRuntime runtime,
+      JobMonitor<P, C> monitor,
+      String executionId,
+      P properties,
+      C context) {
 
-   @Override
-   public Sink<CheckpointMonitor.Stats, NotUsed> createCheckpointStatsSink(String name, Duration statsInterval) {
-      return Flow.of(CheckpointMonitor.Stats.class)
-         .via(Pulse.create(statsInterval, true))
-         .to(Sink.foreach(stats -> monitor.onStats(executionId, name, stats)));
-   }
-
-   @Override
-   public Sink<CheckpointMonitor.Stats, NotUsed> createCheckpointStatsSink(String name) {
-      return createCheckpointStatsSink(name, Duration.ofSeconds(30));
-   }
-
-   @Override
-   public Sink<LatencyMonitor.Stats, NotUsed> createLatencyStatsSink(String name, Duration statsInterval) {
-      return Flow.of(LatencyMonitor.Stats.class)
-         .via(Pulse.create(statsInterval, true))
-         .to(Sink.foreach(stats -> monitor.onStats(executionId, name, stats)));
-   }
-
-   @Override
-   public Sink<LatencyMonitor.Stats, NotUsed> createLatencyStatsSink(String name) {
-      return createLatencyStatsSink(name, Duration.ofSeconds(30));
-   }
-
-   @Override
-   public <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name, Duration statsInterval) {
-      return CheckpointMonitors.create(createCheckpointStatsSink(name, statsInterval));
-
-   }
-
-   @Override
-   public <T> Flow<T, T, NotUsed> createCheckpointMonitor(String name) {
-      return createCheckpointMonitor(name, Duration.ofSeconds(30));
-   }
-
-   @Override
-   public <In, Out, Mat> Flow<In, Out, Mat> createLatencyMonitor(String name, Flow<In, Out, Mat> flow, Duration statsInterval) {
-      return LatencyMonitors.create(flow, createLatencyStatsSink(name, statsInterval), (m, n) -> m);
-   }
-
-   @Override
-   public <In, Out, Mat> Flow<In, Out, Mat> createLatencyMonitor(String name, Flow<In, Out, Mat> flow) {
-      return createLatencyMonitor(name, flow, Duration.ofSeconds(30));
+      var monitoring = StreamMonitoringAdapter.apply(monitor, executionId);
+      var sb = StreamBuilders.common(monitoring, runtime);
+      return apply(sb, executionId, properties, context);
    }
 
    /**
@@ -95,12 +58,33 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
       return properties;
    }
 
-   /**
-    * Access the initialized Alpakkeer runtime.
-    *
-    * @return The runtime
-    */
-   public RuntimeConfiguration getRuntime() {
-      return runtime;
+   @Override
+   public StreamMonitoringAdapter getMonitoring() {
+      return streamBuilder.getMonitoring();
+   }
+
+   @Override
+   public StreamMessagingAdapter getMessaging() {
+      return streamBuilder.getMessaging();
+   }
+
+   @Override
+   public AlpakkeerRuntime getRuntime() {
+      return streamBuilder.getRuntime();
+   }
+
+   @Override
+   public StreamMonitoringAdapter monitoring() {
+      return streamBuilder.monitoring();
+   }
+
+   @Override
+   public StreamMessagingAdapter messaging() {
+      return streamBuilder.messaging();
+   }
+
+   @Override
+   public AlpakkeerRuntime runtime() {
+      return streamBuilder.runtime();
    }
 }
