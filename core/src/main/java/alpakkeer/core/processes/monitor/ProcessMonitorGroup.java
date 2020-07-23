@@ -25,6 +25,11 @@ public final class ProcessMonitorGroup implements ProcessMonitor {
       return apply(Lists.newArrayList());
    }
 
+   public ProcessMonitorGroup clearMonitors() {
+      this.monitors.clear();
+      return this;
+   }
+
    public ProcessMonitorGroup withMonitor(ProcessMonitor monitor) {
       this.monitors.add(monitor);
       return this;

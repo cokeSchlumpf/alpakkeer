@@ -32,6 +32,8 @@ public final class AlpakkeerConfiguration {
 
    private final List<JobConfiguration> jobs;
 
+   private final List<ProcessConfiguration> processes;
+
    public static AlpakkeerConfiguration apply() {
       return Configs.mapToConfigClass(AlpakkeerConfiguration.class, "alpakkeer");
    }
@@ -41,6 +43,17 @@ public final class AlpakkeerConfiguration {
          return jobs
             .stream()
             .filter(j -> j.getName().equals(name))
+            .findFirst();
+      } else {
+         return Optional.empty();
+      }
+   }
+
+   public Optional<ProcessConfiguration> getProcessConfiguration(String name) {
+      if (processes != null) {
+         return processes
+            .stream()
+            .filter(p -> p.getName().equals(name))
             .findFirst();
       } else {
          return Optional.empty();

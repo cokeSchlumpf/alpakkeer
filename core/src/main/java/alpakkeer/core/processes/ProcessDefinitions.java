@@ -6,7 +6,9 @@ import akka.japi.function.Function;
 import akka.japi.function.Procedure2;
 import akka.stream.UniqueKillSwitch;
 import akka.stream.javadsl.RunnableGraph;
+import alpakkeer.Alpakkeer;
 import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.config.ProcessConfiguration;
 import alpakkeer.core.jobs.monitor.LoggingJobMonitor;
 import alpakkeer.core.processes.monitor.LoggingProcessMonitor;
 import alpakkeer.core.processes.monitor.ProcessMonitor;
@@ -30,6 +32,8 @@ import java.util.concurrent.CompletionStage;
  */
 @AllArgsConstructor(staticName = "apply")
 public final class ProcessDefinitions {
+
+   private static final Logger LOG = LoggerFactory.getLogger(Alpakkeer.class);
 
    private final AlpakkeerRuntime runtimeConfiguration;
 
@@ -189,6 +193,17 @@ public final class ProcessDefinitions {
       }
 
       /**
+       * Configure the process to be started upon application startup.
+       *
+       * @param initializeStarted Whether the process should start on initialization of the app
+       * @return This builder instance
+       */
+      public ProcessDefinitionBuilder initializeStarted(boolean initializeStarted) {
+         this.initiallyStarted = initializeStarted;
+         return this;
+      }
+
+      /**
        * Configure the process to stay in stopped state upon application startup.
        *
        * @return This builder instance
@@ -208,6 +223,50 @@ public final class ProcessDefinitions {
       public ProcessDefinitionBuilder withApiEndpoint(Procedure2<Javalin, Process> apiExtension) {
          apiExtensions.add(apiExtension);
          return this;
+      }
+
+      /**
+       * Read configurations for the process from the provided config object.
+       *
+       * @param configuration The configuration object
+       * @return The current instance of the builder
+       */
+      public ProcessDefinitionBuilder withConfiguration(ProcessConfiguration configuration) {
+         if (configuration.isClearMonitors()) {
+            this.monitors.clearMonitors();
+         }
+
+         var next = this
+            .enabled(configuration.isEnabled())
+            .initializeStarted(configuration.isInitializeStarted());
+
+         for (String m : configuration.getMonitors()) {
+            // TODO: Add more monitor types for processes
+            if ("logging".equals(m)) {
+               next = next.withLoggingMonitor();
+            } else {
+               LOG.warn("Unknown monitor type `{}` configured for process `{}`", m, name);
+            }
+         }
+
+         return next;
+      }
+
+      /**
+       * Use this method to enable configuration overrides (e.g. for different environments, etc.); The configuration
+       * will be taken from default location `alpakkeer.processes` (which is a list of job configurations)
+       *
+       * @return The current instance of the builder
+       */
+      public ProcessDefinitionBuilder withConfiguration() {
+         var config = runtime.getConfiguration().getProcessConfiguration(name);
+
+         if (config.isPresent()) {
+            return withConfiguration(config.get());
+         } else {
+            LOG.warn("No configuration object found for process `{}` within `alpakkeer.processes`", name);
+            return this;
+         }
       }
 
       /**

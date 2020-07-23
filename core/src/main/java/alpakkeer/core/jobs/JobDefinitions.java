@@ -354,6 +354,8 @@ public final class JobDefinitions {
                case "history":
                   next = next.withHistoryMonitor();
                   break;
+               default:
+                  LOG.warn("Unknown monitor type `{}` configured for job `{}`", m, name);
             }
          }
 
@@ -380,7 +382,7 @@ public final class JobDefinitions {
          if (config.isPresent()) {
             return withConfiguration(config.get());
          } else {
-            LOG.warn("No configuration object found for job `{}` within `alpakkeer.job`", name);
+            LOG.warn("No configuration object found for job `{}` within `alpakkeer.jobs`", name);
             return this;
          }
       }
