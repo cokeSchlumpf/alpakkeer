@@ -310,11 +310,6 @@ public final class Configs {
                         configObject.getClass().getSimpleName()), e);
 
                      throw e;
-                  } else {
-                     LOG.warn(String.format(
-                        "No value found for field '%s' for class '%s'",
-                        field.getName(),
-                        configObject.getClass().getSimpleName()), e);
                   }
                } catch (IllegalAccessException e) {
                   LOG.error(String.format(

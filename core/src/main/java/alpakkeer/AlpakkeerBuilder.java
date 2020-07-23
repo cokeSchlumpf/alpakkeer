@@ -165,12 +165,12 @@ public final class AlpakkeerBuilder {
 
       jobs.stream()
          .map(f -> Operators.suppressExceptions(() -> f.apply(JobDefinitions.apply(runtime))))
-         .filter(j -> !j.isEnabled())
+         .filter(JobDefinition::isEnabled)
          .forEach(resources::addJob);
 
       processes.stream()
          .map(f -> Operators.suppressExceptions(() -> f.apply(ProcessDefinitions.apply(runtime))))
-         .filter(p -> !p.isEnabled())
+         .filter(ProcessDefinition::isEnabled)
          .forEach(resources::addProcess);
 
       tsMetrics.stream()
