@@ -12,9 +12,9 @@ import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import alpakkeer.config.FileSystemStreamMessagingConfiguration;
 import alpakkeer.core.stream.Record;
-import alpakkeer.core.stream.RecordEnvelope;
 import alpakkeer.core.stream.context.CommittableRecordContext;
 import alpakkeer.core.stream.context.CommittableRecordContexts;
+import alpakkeer.core.stream.context.NoRecordContext;
 import alpakkeer.core.stream.context.RecordContext;
 import alpakkeer.core.util.Operators;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,55 +50,56 @@ public final class FileSystemStreamMessagingAdapter implements StreamMessagingAd
       return dir;
    }
 
-   private CompletionStage<Done> putDocument$internal(String topic, RecordEnvelope<?, ?> recordEnvelope) {
+   private CompletionStage<Done> putDocument$internal(String topic, Record<?, ?> record) {
       return Operators.suppressExceptions(() -> {
-         var filename = recordEnvelope.getRecord().getKey() + ".json";
+         var filename = record.getKey() + ".json";
 
          try (OutputStream os = Files.newOutputStream(getDirectory(topic).resolve(filename))) {
-            om.writeValue(os, recordEnvelope.getRecord());
+            om.writeValue(os, record);
          }
 
-         if (recordEnvelope.getContext() instanceof CommittableRecordContext) {
-            return ((CommittableRecordContext) recordEnvelope.getContext()).commit();
+         if (record.getContext() instanceof CommittableRecordContext) {
+            return ((CommittableRecordContext) record.getContext()).commit();
          } else {
             return CompletableFuture.completedFuture(Done.getInstance());
          }
       });
    }
 
-   private <R extends Record> RecordEnvelope<R, CommittableRecordContext> getDocument$internal(Path path, Class<R> recordType) {
+   @SuppressWarnings("unchecked")
+   private <R> Record<R, CommittableRecordContext> getDocument$internal(Path path) {
       return Operators.suppressExceptions(() -> {
          try (InputStream is = Files.newInputStream(path)) {
             var context = CommittableRecordContexts.createFromRunnable(() -> Operators.ignoreExceptions(() -> Files.delete(path), LOG));
-            var record = om.readValue(is, recordType);
+            var record = (Record<R, NoRecordContext>) om.readValue(is, Record.class);
 
-            return RecordEnvelope.apply(record, context);
+            return record.withContext(context);
          }
       });
    }
 
    @Override
-   public <R extends Record, C extends RecordContext> CompletionStage<Done> put(String topic, RecordEnvelope<R, C> record) {
+   public <R, C extends RecordContext> CompletionStage<Done> putRecord(String topic, Record<R, C> record) {
       return putDocument$internal(topic, record);
    }
 
    @Override
-   public <R extends Record, C extends RecordContext> Sink<RecordEnvelope<R, C>, CompletionStage<Done>> toTopic(String topic) {
+   public <R, C extends RecordContext> Sink<Record<R, C>, CompletionStage<Done>> recordsSink(String topic) {
       return Flow
-         .<RecordEnvelope<R, C>>create()
+         .<Record<R, C>>create()
          .toMat(Sink.foreach(record -> putDocument$internal(topic, record)), Keep.right());
    }
 
    @Override
-   public <R extends Record> CompletionStage<Optional<RecordEnvelope<R, CommittableRecordContext>>> get(String topic, Class<R> recordType) {
+   public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType) {
       return CompletableFuture.completedFuture(Operators.suppressExceptions(() -> Files
          .list(getDirectory(topic))
-         .map(path -> getDocument$internal(path, recordType))
+         .map(this::<T>getDocument$internal)
          .findFirst()));
    }
 
    @Override
-   public <R extends Record> Source<RecordEnvelope<R, CommittableRecordContext>, NotUsed> fromTopic(String topic, Class<R> recordType) {
+   public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType) {
       var dir = getDirectory(topic);
 
       return DirectoryChangesSource
@@ -106,7 +107,7 @@ public final class FileSystemStreamMessagingAdapter implements StreamMessagingAd
          .filter(pair -> pair.second().equals(DirectoryChange.Creation) || pair.second().equals(DirectoryChange.Modification))
          .map(Pair::first)
          .prepend(Directory.ls(dir))
-         .map(path -> getDocument$internal(path, recordType));
+         .map(this::getDocument$internal);
    }
 
 }

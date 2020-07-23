@@ -233,6 +233,8 @@ public final class JobDefinitions {
 
       private final JobMonitorGroup<P, C> monitors;
 
+      private boolean enabled = true;
+
       private List<ScheduleExecution<P>> scheduleExecutions;
 
       private List<Procedure2<Javalin, Job<P, C>>> apiExtensions;
@@ -261,7 +263,7 @@ public final class JobDefinitions {
 
          return apply(
             name, runtimeConfiguration, jobTypes, run, monitors,
-            Lists.newArrayList(), Lists.newArrayList(), logger);
+            true, Lists.newArrayList(), Lists.newArrayList(), logger);
       }
 
       /**
@@ -271,6 +273,39 @@ public final class JobDefinitions {
        */
       public JobDefinition<P, C> build() {
          return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions, runtimeConfiguration);
+      }
+
+      /**
+       * The job definition can be disabled. If the definition is disabled, the job will not be started/ initialized
+       * during startup of Alpakkeer.
+       *
+       * @return The current instance of the builder
+       */
+      public JobSettingsConfiguration<P, C> disabled() {
+         this.enabled = false;
+         return this;
+      }
+
+      /**
+       * Set whether the job should be enabled or not. By default it is enabled. If the definition is disabled,
+       * the job will not be started/ initialized during startup of Alpakkeer.
+       *
+       * @param enabled Whether the job is enabled or not.
+       * @return The current instance of the builder
+       */
+      public JobSettingsConfiguration<P, C> enabled(boolean enabled) {
+         this.enabled = enabled;
+         return this;
+      }
+
+      /**
+       * Enable the job. By default it is enabled. If the definition is disabled,
+       * the job will not be started/ initialized during startup of Alpakkeer.
+       *
+       * @return The current instance of the builder
+       */
+      public JobSettingsConfiguration<P, C> enabled() {
+         return enabled(true);
       }
 
       /**

@@ -7,9 +7,9 @@ import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import alpakkeer.core.stream.Record;
-import alpakkeer.core.stream.RecordEnvelope;
 import alpakkeer.core.stream.context.CommittableRecordContext;
 import alpakkeer.core.stream.context.CommittableRecordContexts;
+import alpakkeer.core.stream.context.NoRecordContext;
 import alpakkeer.core.stream.context.RecordContext;
 import alpakkeer.core.util.Operators;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,9 +35,9 @@ public final class InMemoryStreamMessagingAdapter implements StreamMessagingAdap
       return apply(om, Maps.newHashMap());
    }
 
-   private synchronized CompletionStage<Done> putDocument$internal(String topic, RecordEnvelope<?, ?> recordEnvelope) {
+   private synchronized CompletionStage<Done> putDocument$internal(String topic, Record<?, ?> record) {
       return Operators.suppressExceptions(() -> {
-         var json = om.writeValueAsString(recordEnvelope.getRecord());
+         var json = om.writeValueAsString(record);
 
          if (!topics.containsKey(topic)) {
             topics.put(topic, Lists.newArrayList());
@@ -45,54 +45,55 @@ public final class InMemoryStreamMessagingAdapter implements StreamMessagingAdap
 
          topics.get(topic).add(json);
 
-         if (recordEnvelope.getContext() instanceof CommittableRecordContext) {
-            return ((CommittableRecordContext) recordEnvelope.getContext()).commit();
+         if (record.getContext() instanceof CommittableRecordContext) {
+            return ((CommittableRecordContext) record.getContext()).commit();
          } else {
             return CompletableFuture.completedFuture(Done.getInstance());
          }
       });
    }
 
-   private synchronized <R extends Record> Optional<RecordEnvelope<R, CommittableRecordContext>> getDocument$internal(String topic, Class<R> recordType) {
+   @SuppressWarnings("unchecked")
+   private synchronized <R> Optional<Record<R, CommittableRecordContext>> getDocument$internal(String topic) {
       return Operators.suppressExceptions(() -> {
             var context = CommittableRecordContexts.createFromRunnable(() -> {});
 
             if (topics.containsKey(topic) && !topics.get(topic).isEmpty()) {
-               var record = om.readValue(topics.get(topic).remove(0), recordType);
-               return Optional.of(RecordEnvelope.apply(record, context));
+               var record = (Record<R, NoRecordContext>) om.readValue(topics.get(topic).remove(0), Record.class);
+               return Optional.of(record.withContext(context));
             } else {
                return Optional.empty();
             }
       });
    }
 
-
    @Override
-   public <R extends Record, C extends RecordContext> CompletionStage<Done> put(String topic, RecordEnvelope<R, C> record) {
+   public <R, C extends RecordContext> CompletionStage<Done> putRecord(String topic, Record<R, C> record) {
       return putDocument$internal(topic, record);
    }
 
    @Override
-   public <R extends Record, C extends RecordContext> Sink<RecordEnvelope<R, C>, CompletionStage<Done>> toTopic(String topic) {
+   public <R, C extends RecordContext> Sink<Record<R, C>, CompletionStage<Done>> recordsSink(String topic) {
       return Flow
-         .<RecordEnvelope<R, C>>create()
+         .<Record<R,C>>create()
          .toMat(Sink.foreach(record -> putDocument$internal(topic, record)), Keep.right());
    }
 
    @Override
-   public <R extends Record> CompletionStage<Optional<RecordEnvelope<R, CommittableRecordContext>>> get(String topic, Class<R> recordType) {
-      return CompletableFuture.completedFuture(getDocument$internal(topic, recordType));
+   public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType) {
+      return CompletableFuture.completedFuture(getDocument$internal(topic));
    }
 
    @Override
-   public <R extends Record> Source<RecordEnvelope<R, CommittableRecordContext>, NotUsed> fromTopic(String topic, Class<R> recordType) {
+   public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType) {
       return Source
          .repeat("tick")
-         .map(s -> getDocument$internal(topic, recordType))
+         .map(s -> this.<T>getDocument$internal(topic))
          .grouped(500)
          .throttle(1, Duration.ofSeconds(1))
          .mapConcat(l -> l)
          .filter(Optional::isPresent)
          .map(Optional::get);
    }
+
 }

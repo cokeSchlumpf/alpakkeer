@@ -3,8 +3,6 @@ package alpakkeer;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
-import alpakkeer.core.stream.RecordEnvelope;
-import alpakkeer.core.stream.Records;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 
@@ -34,10 +32,12 @@ public class AlpakkeerTest {
          .start()
          .toCompletableFuture()
          .get();
+
+      alpakkeer.stop().toCompletableFuture().get();
    }
 
    @Test
-   public void messagingTest() throws InterruptedException {
+   public void messagingTest() throws InterruptedException, ExecutionException {
       var list = Lists.<String>newArrayList();
 
       var alpakkeer = Alpakkeer
@@ -47,17 +47,16 @@ public class AlpakkeerTest {
                .create("hello-world")
                .runGraph(sb -> Source
                   .from(Lists.newArrayList("Hallo", "Welt"))
-                  .map(Records::apply)
-                  .map(RecordEnvelope::apply)
-                  .toMat(sb.messaging().toTopic("test"), Keep.right()))
+                  .toMat(sb.messaging().itemsSink("test"), Keep.right()))
                .withLoggingMonitor())
          .withProcess(p -> p
             .create("process")
             .runGraph(sb -> sb
                .messaging()
-               .fromTopicAsSimpleRecord("test", String.class)
+               .recordsSource("test", String.class)
                .map(record -> {
-                  list.add(record.getRecord().getValue());
+                  list.add(record.getValue());
+                  record.getContext().commit();
                   return record;
                })
                .toMat(Sink.ignore(), Keep.right()))
@@ -74,6 +73,8 @@ public class AlpakkeerTest {
       assertTrue(list.contains("Hallo"));
       assertTrue(list.contains("Welt"));
       assertEquals(2, list.size());
+
+      alpakkeer.stop().toCompletableFuture().get();
    }
 
 }

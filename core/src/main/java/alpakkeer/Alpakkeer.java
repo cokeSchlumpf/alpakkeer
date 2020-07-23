@@ -1,5 +1,6 @@
 package alpakkeer;
 
+import akka.Done;
 import alpakkeer.api.AlpakkeerAPI;
 import alpakkeer.config.AlpakkeerConfiguration;
 import alpakkeer.core.resources.Resources;
@@ -9,6 +10,9 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Central entry-point for using Alpakkeer DSL.
@@ -67,10 +71,10 @@ public final class Alpakkeer {
    /**
     * Gracefully shuts down all processes and the system as a whole.
     */
-   public void stop() {
+   public CompletionStage<Done> stop() {
       LOG.info("Terminating Alpakkeer");
 
-      runtimeConfiguration
+      var scheduler = runtimeConfiguration
          .getScheduler()
          .terminate()
          .thenAccept(done -> LOG.info("... scheduler stopped"));
@@ -79,13 +83,20 @@ public final class Alpakkeer {
          .getSystem()
          .terminate();
 
-      runtimeConfiguration
+      var system = runtimeConfiguration
          .getSystem()
          .getWhenTerminated()
          .thenAccept(terminated -> LOG.info("... actor system stopped"));
 
-      api.stop();
-      LOG.info("... API server stopped");
+      return scheduler
+         .thenCompose(i -> system)
+         .thenApply(i -> {
+            api.stop();
+            api.stop();
+            LOG.info("... API server stopped");
+            LOG.info("... Alpakkeer stopped");
+            return Done.getInstance();
+         });
    }
 
 }

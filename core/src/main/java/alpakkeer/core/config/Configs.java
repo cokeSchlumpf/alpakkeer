@@ -60,6 +60,22 @@ public final class Configs {
     * System variables/ JVM arguments
     */
    public static final Config system = ConfigFactory.systemProperties();
+
+   /**
+    * The name of the current environment, based on "alpakkeer.environment" system environment variable.
+    */
+   private static final String environmentName = system.hasPath(ENV_ALPAKKEER_ENVIRONMENT) ?
+      system.getString(ENV_ALPAKKEER_ENVIRONMENT) : LOCAL_ENVIRONMENT;
+
+   /**
+    * The name of the current instance's role, based on "alpakkeer.role" system environment variable.
+    */
+   private static final String roleName = system.hasPath(ENV_ALPAKKEER_ROLE) ?
+      system.getString(ENV_ALPAKKEER_ROLE) : null;
+
+   /**
+    * The logger for this class.
+    */
    private static final Logger LOG = LoggerFactory.getLogger(Configs.class);
 
    static {
@@ -75,6 +91,34 @@ public final class Configs {
          .withEnvironmentVariables()
          .withSystemProperties()
          .getConfig();
+   }
+
+   /**
+    * @return The name of the current environment, based on "alpakkeer.environment" system environment variable.
+    */
+   public static String getEnvironmentName() {
+      return environmentName;
+   }
+
+   /**
+    * @return The name of the current instance's role, based on "alpakkeer.role" system environment variable.
+    */
+   public static Optional<String> getRoleName() {
+      return Optional.ofNullable(roleName);
+   }
+
+   /**
+    * @return The name of the current environment, based on "alpakkeer.environment" system environment variable.
+    */
+   public static String environmentName() {
+      return getEnvironmentName();
+   }
+
+   /**
+    * @return The name of the current instance's role, based on "alpakkeer.role" system environment variable.
+    */
+   public static Optional<String> roleName() {
+      return getRoleName();
    }
 
    /**
@@ -293,12 +337,6 @@ public final class Configs {
     * Helper class to allow declarative definition of config file loading order.
     */
    private static class ConfigBuilder {
-
-      private static final String environmentName = system.hasPath(ENV_ALPAKKEER_ENVIRONMENT) ?
-         system.getString(ENV_ALPAKKEER_ENVIRONMENT) : LOCAL_ENVIRONMENT;
-
-      private static final String roleName = system.hasPath(ENV_ALPAKKEER_ROLE) ?
-         system.getString(ENV_ALPAKKEER_ROLE) : null;
 
       /**
        * The actual configuration which is built by the {@link ConfigBuilder} instance.
