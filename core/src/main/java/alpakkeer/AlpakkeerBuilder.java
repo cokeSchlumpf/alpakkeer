@@ -18,6 +18,8 @@ import com.google.common.collect.Lists;
 import io.javalin.Javalin;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -26,6 +28,8 @@ import java.util.List;
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AlpakkeerBuilder {
+
+   private static final Logger LOG = LoggerFactory.getLogger(Alpakkeer.class);
 
    private List<Procedure3<Javalin, AlpakkeerRuntime, Resources>> apiExtensions;
 
@@ -154,17 +158,23 @@ public final class AlpakkeerBuilder {
       var runtime = runtimeConfig.build(alpakkeerConfiguration);
       var resources = Resources.apply(runtime);
 
-      // initialize components
+      /*
+       * initialize components
+       */
       runtime.getMetricsCollectors().forEach(c -> c.run(runtime));
 
-      jobs.stream().map(f ->
-         Operators.suppressExceptions(() -> f.apply(JobDefinitions.apply(runtime)))).forEach(resources::addJob);
+      jobs.stream()
+         .map(f -> Operators.suppressExceptions(() -> f.apply(JobDefinitions.apply(runtime))))
+         .filter(j -> !j.isEnabled())
+         .forEach(resources::addJob);
 
-      processes.stream().map(f ->
-         Operators.suppressExceptions(() -> f.apply(ProcessDefinitions.apply(runtime)))).forEach(resources::addProcess);
+      processes.stream()
+         .map(f -> Operators.suppressExceptions(() -> f.apply(ProcessDefinitions.apply(runtime))))
+         .filter(p -> !p.isEnabled())
+         .forEach(resources::addProcess);
 
-      tsMetrics.forEach(f ->
-         Operators.suppressExceptions(() -> resources.addTimeSeriesMetric(f.apply(runtime, resources))));
+      tsMetrics.stream()
+         .forEach(f -> Operators.suppressExceptions(() -> resources.addTimeSeriesMetric(f.apply(runtime, resources))));
 
       apiExtensions.forEach(ext ->
          Operators.suppressExceptions(() -> ext.apply(runtime.getApp(), runtime, resources)));

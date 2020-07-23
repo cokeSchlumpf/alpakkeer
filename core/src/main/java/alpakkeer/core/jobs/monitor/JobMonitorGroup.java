@@ -22,6 +22,11 @@ public final class JobMonitorGroup<P, C> implements JobMonitor<P, C> {
       return JobMonitorGroup.apply(Lists.newArrayList());
    }
 
+   public JobMonitorGroup<P, C> clearMonitors() {
+      this.monitors.clear();
+      return this;
+   }
+
    public JobMonitorGroup<P, C> withMonitor(JobMonitor<P, C> monitor) {
       this.monitors.add(monitor);
       return this;

@@ -8,6 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.util.Optional;
+
 @Getter
 @ConfigurationProperties
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
@@ -27,8 +30,21 @@ public final class AlpakkeerConfiguration {
 
    private final MessagingConfiguration messaging;
 
+   private final List<JobConfiguration> jobs;
+
    public static AlpakkeerConfiguration apply() {
       return Configs.mapToConfigClass(AlpakkeerConfiguration.class, "alpakkeer");
+   }
+
+   public Optional<JobConfiguration> getJobConfiguration(String name) {
+      if (jobs != null) {
+         return jobs
+            .stream()
+            .filter(j -> j.getName().equals(name))
+            .findFirst();
+      } else {
+         return Optional.empty();
+      }
    }
 
 }

@@ -15,6 +15,8 @@ public interface JobDefinition<P, C> extends JobRunner<P, C> {
 
    C getInitialContext();
 
+   boolean isEnabled();
+
    String getName();
 
    Logger getLogger();

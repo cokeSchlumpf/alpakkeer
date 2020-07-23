@@ -11,6 +11,8 @@ public interface ProcessDefinition {
 
    void extendApi(Javalin api, Process processInstance);
 
+   boolean isEnabled();
+
    boolean isInitiallyStarted();
 
    String getName();

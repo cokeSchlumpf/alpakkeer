@@ -4,7 +4,10 @@ import akka.Done;
 import akka.japi.Procedure;
 import akka.japi.function.Procedure2;
 import akka.stream.javadsl.RunnableGraph;
+import alpakkeer.Alpakkeer;
 import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.config.JobConfiguration;
+import alpakkeer.config.ScheduledExecutionConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
 import alpakkeer.core.jobs.monitor.*;
 import alpakkeer.core.scheduler.model.CronExpression;
@@ -32,6 +35,8 @@ import java.util.function.Function;
  */
 @AllArgsConstructor(staticName = "apply")
 public final class JobDefinitions {
+
+   private static final Logger LOG = LoggerFactory.getLogger(Alpakkeer.class);
 
    private AlpakkeerRuntime runtimeConfiguration;
 
@@ -225,7 +230,7 @@ public final class JobDefinitions {
 
       private final String name;
 
-      private final AlpakkeerRuntime runtimeConfiguration;
+      private final AlpakkeerRuntime runtime;
 
       private final JobTypeConfiguration<P, C> jobTypes;
 
@@ -233,7 +238,7 @@ public final class JobDefinitions {
 
       private final JobMonitorGroup<P, C> monitors;
 
-      private boolean enabled = true;
+      private boolean enabled;
 
       private List<ScheduleExecution<P>> scheduleExecutions;
 
@@ -272,7 +277,7 @@ public final class JobDefinitions {
        * @return The jib definition.
        */
       public JobDefinition<P, C> build() {
-         return SimpleJobDefinition.apply(name, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions, runtimeConfiguration);
+         return SimpleJobDefinition.apply(name, enabled, jobTypes, run, logger, scheduleExecutions, monitors, apiExtensions, runtime);
       }
 
       /**
@@ -321,6 +326,66 @@ public final class JobDefinitions {
       }
 
       /**
+       * Read configurations for the job from the provided config object.
+       *
+       * @param configuration The configuration object
+       * @return The current instance of the builder
+       */
+      @SuppressWarnings("unchecked")
+      public JobSettingsConfiguration<P, C> withConfiguration(JobConfiguration configuration) {
+         if (configuration.isClearMonitors()) {
+            this.monitors.clearMonitors();
+         }
+
+         if (configuration.isClearSchedule()) {
+            this.scheduleExecutions.clear();
+         }
+
+         var next = this.enabled(configuration.isEnabled());
+
+         for (String m : configuration.getMonitors()) {
+            switch (m) {
+               case "logging":
+                  next = next.withLoggingMonitor();
+                  break;
+               case "prometheus":
+                  next = next.withPrometheusMonitor();
+                  break;
+               case "history":
+                  next = next.withHistoryMonitor();
+                  break;
+            }
+         }
+
+         for (ScheduledExecutionConfiguration c : configuration.getSchedule()) {
+            var props = Operators.suppressExceptions(
+               () -> runtime.getObjectMapper().readValue(c.getProperties(), (Class<P>) jobTypes.defaultProperties.getClass()));
+
+            next = next.withScheduledExecution(
+               ScheduleExecution.apply(props, c.isQueue(), CronExpression.apply(c.getCronExpression())));
+         }
+
+         return next;
+      }
+
+      /**
+       * Use this method to enable configuration overrides (e.g. for different environments, etc.); The configuration
+       * will be taken from default location `alpakkeer.jobs` (which is a list of job configurations)
+       *
+       * @return The current instance of the builder
+       */
+      public JobSettingsConfiguration<P, C> withConfiguration() {
+         var config = runtime.getConfiguration().getJobConfiguration(name);
+
+         if (config.isPresent()) {
+            return withConfiguration(config.get());
+         } else {
+            LOG.warn("No configuration object found for job `{}` within `alpakkeer.job`", name);
+            return this;
+         }
+      }
+
+      /**
        * Enable a {@link InMemoryHistoryJobMonitor} for the job. A history monitor stores errors and results of executions. This default
        * history monitor will store the information about the last 10 executions.
        *
@@ -339,8 +404,8 @@ public final class JobDefinitions {
       public JobSettingsConfiguration<P, C> withHistoryMonitor(int limit) {
          return withMonitor(InMemoryHistoryJobMonitor.apply(
             limit,
-            runtimeConfiguration.getObjectMapper(),
-            runtimeConfiguration.getSystem()));
+            runtime.getObjectMapper(),
+            runtime.getSystem()));
       }
 
       /**
@@ -350,7 +415,7 @@ public final class JobDefinitions {
        * @return The current instance of the builder
        */
       public JobSettingsConfiguration<P, C> withLoggingMonitor() {
-         return withMonitor(LoggingJobMonitor.apply(name, logger, runtimeConfiguration.getObjectMapper()));
+         return withMonitor(LoggingJobMonitor.apply(name, logger, runtime.getObjectMapper()));
       }
 
       /**
@@ -360,7 +425,7 @@ public final class JobDefinitions {
        * @return The current instance of the builder
        */
       public JobSettingsConfiguration<P, C> withPrometheusMonitor() {
-         return withMonitor(PrometheusJobMonitor.apply(name, runtimeConfiguration.getCollectorRegistry()));
+         return withMonitor(PrometheusJobMonitor.apply(name, runtime.getCollectorRegistry()));
       }
 
       /**
@@ -425,6 +490,8 @@ public final class JobDefinitions {
 
       private final String name;
 
+      private final boolean enabled;
+
       private final JobTypeConfiguration<P, C> jobTypes;
 
       private final Function<JobStreamBuilder<P, C>, CompletionStage<JobHandle<C>>> run;
@@ -452,6 +519,11 @@ public final class JobDefinitions {
       @Override
       public C getInitialContext() {
          return jobTypes.initialContext;
+      }
+
+      @Override
+      public boolean isEnabled() {
+         return enabled;
       }
 
       @Override

@@ -116,6 +116,8 @@ public final class ProcessDefinitions {
 
       private boolean initiallyStarted;
 
+      private boolean enabled;
+
       private final ProcessMonitorGroup monitors;
 
       private List<Procedure2<Javalin, Process>> apiExtensions;
@@ -128,7 +130,7 @@ public final class ProcessDefinitions {
 
          return apply(
             name, runner, runtime, Duration.ofSeconds(10), Duration.ofMinutes(10),
-            Duration.ofMinutes(1), logger, true, ProcessMonitorGroup.apply(),
+            Duration.ofMinutes(1), logger, true, true, ProcessMonitorGroup.apply(),
             Lists.newArrayList());
       }
 
@@ -140,7 +142,40 @@ public final class ProcessDefinitions {
       public ProcessDefinition build() {
          return SimpleProcessDefinition.apply(
             name, initialRetryBackoff, completionRestartBackoff, retryBackoffResetTimeout, runner,
-            logger, initiallyStarted, monitors, apiExtensions, runtime);
+            logger, enabled, initiallyStarted, monitors, apiExtensions, runtime);
+      }
+
+      /**
+       * The job definition can be disabled. If the definition is disabled, the job will not be started/ initialized
+       * during startup of Alpakkeer.
+       *
+       * @return The current instance of the builder
+       */
+      public ProcessDefinitionBuilder disabled() {
+         this.enabled = false;
+         return this;
+      }
+
+      /**
+       * Set whether the process should be enabled or not. By default it is enabled. If the definition is disabled,
+       * the process will not be started/ initialized during startup of Alpakkeer.
+       *
+       * @param enabled Whether the job is enabled or not.
+       * @return The current instance of the builder
+       */
+      public ProcessDefinitionBuilder enabled(boolean enabled) {
+         this.enabled = enabled;
+         return this;
+      }
+
+      /**
+       * Enable the process. By default it is enabled. If the definition is disabled,
+       * the process will not be started/ initialized during startup of Alpakkeer.
+       *
+       * @return The current instance of the builder
+       */
+      public ProcessDefinitionBuilder enabled() {
+         return enabled(true);
       }
 
       /**
@@ -250,6 +285,8 @@ public final class ProcessDefinitions {
 
       private final Logger logger;
 
+      private final boolean enabled;
+
       private final boolean initiallyStarted;
 
       private final ProcessMonitorGroup monitors;
@@ -261,6 +298,11 @@ public final class ProcessDefinitions {
       @Override
       public void extendApi(Javalin api, Process processInstance) {
          apiExtensions.forEach(ext -> Operators.suppressExceptions(() -> ext.apply(api, processInstance)));
+      }
+
+      @Override
+      public boolean isEnabled() {
+         return enabled;
       }
 
       @Override
