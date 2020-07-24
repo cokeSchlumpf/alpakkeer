@@ -1,6 +1,8 @@
 # Created by https://www.gitignore.io/api/java,macos,gradle
 # Edit at https://www.gitignore.io/?templates=java,macos,gradle
 
+samples/src/main/java/ch/suva/mlp/docs
+
 ### Java ###
 # Compiled class file
 *.class

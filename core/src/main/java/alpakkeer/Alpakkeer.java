@@ -70,6 +70,8 @@ public final class Alpakkeer {
 
    /**
     * Gracefully shuts down all processes and the system as a whole.
+    *
+    * @return A CompletionStage which completes as soon as Alpakkeer is stopped
     */
    public CompletionStage<Done> stop() {
       LOG.info("Terminating Alpakkeer");

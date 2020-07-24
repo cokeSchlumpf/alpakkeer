@@ -68,7 +68,7 @@ public final class ProcessDefinitions {
 
       /**
        * Create a process execution factory which returns a completion stage. The process cannot be cancelled upon
-       * request. Use @link{@link this#runCancellable(Function)} to create a process handle if process should be
+       * request. Use @link{this#runCancellable(Function)} to create a process handle if process should be
        * cancellable.
        *
        * @param run The factory method

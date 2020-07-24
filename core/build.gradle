@@ -50,6 +50,7 @@ sourceSets {
         java {
             srcDirs = []
         }
+
         scala {
             srcDirs = ['src/main/scala', 'src/main/java']
         }
@@ -59,6 +60,7 @@ sourceSets {
         java {
             srcDirs = []
         }
+
         scala {
             srcDirs = ['src/test/scala', 'src/test/java']
         }
