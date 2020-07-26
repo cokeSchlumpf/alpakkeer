@@ -80,12 +80,14 @@ public final class InMemoryStreamMessagingAdapter implements StreamMessagingAdap
    }
 
    @Override
-   public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType) {
+   public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType, String consumerGroup) {
+      // TODO: Implement consumer id
       return CompletableFuture.completedFuture(getDocument$internal(topic));
    }
 
    @Override
-   public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType) {
+   public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType, String consumerGroup) {
+      // TODO: Implement consumer id
       return Source
          .repeat("tick")
          .map(s -> this.<T>getDocument$internal(topic))

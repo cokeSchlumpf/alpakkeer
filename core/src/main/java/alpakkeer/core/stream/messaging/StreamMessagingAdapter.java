@@ -86,19 +86,46 @@ public interface StreamMessagingAdapter {
     *
     * @param topic The name of the topic
     * @param recordType The type of the record; will be used for de-serialization
+    * @param consumerGroup The consumer group id to identify different consumers on the topic
     * @param <T> The type of the record
     * @return An optional record wrapped in its envelope
     */
-   <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType);
+   <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType, String consumerGroup);
+
+   /**
+    * Read the next record from a topic with the `default` consumer id.
+    *
+    * @param topic The name of the topic
+    * @param recordType The type of the record; will be used for de-serialization
+    * @param <T> The type of the record
+    * @return An optional record wrapped in its envelope
+    */
+   default <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType) {
+      return getNextRecord(topic, recordType, "default");
+   }
+
 
    /**
     * Creates an Akka Streams source to stream messages from a topic.
     *
     * @param topic The name of the topic
     * @param recordType The type of the record; will be used for de-serialization
+    * @param consumerGroup The consumer group id to identify different consumers on the topic
     * @param <T> The type of the record
     * @return An Akka Streams source of records
     */
-   <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType);
+   <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType, String consumerGroup);
+
+   /**
+    * Creates an Akka Streams source to stream messages from a topic with the `default` consumer id.
+    *
+    * @param topic The name of the topic
+    * @param recordType The type of the record; will be used for de-serialization
+    * @param <T> The type of the record
+    * @return An Akka Streams source of records
+    */
+   default <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType) {
+      return recordsSource(topic, recordType, "default");
+   }
 
 }

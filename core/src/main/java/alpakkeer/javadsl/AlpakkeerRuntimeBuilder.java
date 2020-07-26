@@ -80,9 +80,10 @@ public final class AlpakkeerRuntimeBuilder {
    }
 
    public AlpakkeerRuntime build(AlpakkeerConfiguration config) {
+      var system = Optional.ofNullable(this.system).orElseGet(() -> ActorSystem.apply("alpakkeer"));
       var objectMapper = Optional.ofNullable(this.objectMapper).orElseGet(() -> ObjectMapperFactory.apply().create(true));
       var streamMessaging = Optional.ofNullable(this.streamMessagingAdapter).orElseGet(() ->
-         StreamMessagingAdapters.createFromConfiguration(objectMapper, config.getMessaging()));
+         StreamMessagingAdapters.createFromConfiguration(system, objectMapper, config.getMessaging()));
 
       return AlpakkeerRuntime.apply(
          Optional.ofNullable(app).orElseGet(() -> Javalin
@@ -93,7 +94,7 @@ public final class AlpakkeerRuntimeBuilder {
             })
             .start(config.getApi().getHostname(), config.getApi().getPort())),
          config,
-         Optional.ofNullable(system).orElseGet(() -> ActorSystem.apply("alpakkeer")),
+         system,
          objectMapper,
          Optional.ofNullable(collectorRegistry).orElse(CollectorRegistry.defaultRegistry),
          Optional.ofNullable(contextStore).orElseGet(() -> ContextStores.apply().create()),

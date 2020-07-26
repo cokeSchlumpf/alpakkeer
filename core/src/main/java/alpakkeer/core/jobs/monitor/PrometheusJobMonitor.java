@@ -130,7 +130,6 @@ public final class PrometheusJobMonitor<P, C> implements JobMonitor<P, C> {
                .build(
                   String.format("%s__%s__count_sum", this.name, nameSC),
                   "Number of documents processed by this checkpoint")
-               .labelNames("execution_id")
                .register(registry));
          }
 
@@ -167,7 +166,7 @@ public final class PrometheusJobMonitor<P, C> implements JobMonitor<P, C> {
          }
 
 
-         counts.get(nameSC).labels(executionId).inc(statistics.count());
+         counts.get(nameSC).inc(statistics.count());
          countsInterval.get(nameSC).set(statistics.count());
          throughputs.get(nameSC).set(statistics.throughputElementsPerSecond());
          pullPushLatencies.get(nameSC).set(statistics.pullPushLatencyNanos());
@@ -187,7 +186,6 @@ public final class PrometheusJobMonitor<P, C> implements JobMonitor<P, C> {
                .build(
                   String.format("%s__%s__count_sum", this.name, nameSC),
                   "Number of documents processed by this checkpoint")
-               .labelNames("execution_id")
                .register(registry));
          }
 
@@ -207,7 +205,7 @@ public final class PrometheusJobMonitor<P, C> implements JobMonitor<P, C> {
                .register(registry));
          }
 
-         counts.get(nameSC).labels(executionId).inc(statistics.count());
+         counts.get(nameSC).inc(statistics.count());
          countsInterval.get(nameSC).set(statistics.count());
          latencies.get(nameSC).set(statistics.avgLatency());
       } catch (Exception ex) {

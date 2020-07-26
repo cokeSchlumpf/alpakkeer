@@ -91,7 +91,8 @@ public final class FileSystemStreamMessagingAdapter implements StreamMessagingAd
    }
 
    @Override
-   public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType) {
+   public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType, String consumerGroup) {
+      // TODO: Use consumer id!
       return CompletableFuture.completedFuture(Operators.suppressExceptions(() -> Files
          .list(getDirectory(topic))
          .map(this::<T>getDocument$internal)
@@ -99,7 +100,8 @@ public final class FileSystemStreamMessagingAdapter implements StreamMessagingAd
    }
 
    @Override
-   public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType) {
+   public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType, String consumerGroup) {
+      // TODO: Use consumer id!
       var dir = getDirectory(topic);
 
       return DirectoryChangesSource
