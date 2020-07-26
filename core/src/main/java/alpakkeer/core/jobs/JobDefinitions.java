@@ -4,8 +4,8 @@ import akka.Done;
 import akka.japi.Procedure;
 import akka.japi.function.Procedure2;
 import akka.stream.javadsl.RunnableGraph;
-import alpakkeer.Alpakkeer;
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.Alpakkeer;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.config.JobConfiguration;
 import alpakkeer.config.ScheduledExecutionConfiguration;
 import alpakkeer.core.jobs.model.ScheduleExecution;
@@ -550,7 +550,7 @@ public final class JobDefinitions {
 
       @Override
       public CompletionStage<JobHandle<C>> run(String executionId, P properties, C context) {
-         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(runtime, monitors, executionId, properties, context)));
+         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(runtime, monitors, executionId, logger, properties, context)));
       }
 
    }

@@ -1,4 +1,4 @@
-package alpakkeer;
+package alpakkeer.javadsl;
 
 import akka.japi.function.Function;
 import akka.japi.function.Function2;

@@ -1,6 +1,6 @@
 package alpakkeer.api;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.resources.Resources;
 import io.javalin.Javalin;
 import io.javalin.plugin.json.JavalinJackson;

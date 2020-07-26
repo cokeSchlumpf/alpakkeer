@@ -21,26 +21,26 @@ public final class LoggingProcessMonitor implements ProcessMonitor {
    private final Logger log;
 
    public static LoggingProcessMonitor apply(String name) {
-      return apply(name, LoggerFactory.getLogger(String.format("alpakkeer.jobs.%s", name)));
+      return apply(name, LoggerFactory.getLogger(String.format("alpakkeer.processes.%s", name)));
    }
 
    @Override
    public void onStarted(String executionId) {
-      log.info("Job execution `{}` started for job `{}`", executionId, name);
+      log.info("Process execution `{}` started for process `{}`", executionId, name);
    }
 
    @Override
    public void onFailed(String executionId, Throwable cause, Instant nextRetry) {
       log.warn(
          String.format(
-            "An exception occurred in execution `%s` of job `%s`, will retry at `%s`",
+            "An exception occurred in execution `%s` of process `%s`, will retry at `%s`",
             executionId, name, LocalDateTime.from(nextRetry.atZone(ZoneId.systemDefault()))),
          cause);
    }
 
    @Override
    public void onCompletion(String executionId, Instant nextStart) {
-      log.info("Execution `{}` of job `{}` finished successfully", executionId, name);
+      log.info("Execution `{}` of process `{}` finished successfully", executionId, name);
    }
 
    @Override
@@ -55,7 +55,7 @@ public final class LoggingProcessMonitor implements ProcessMonitor {
 
    @Override
    public void onStopped(String executionId) {
-      log.info("Execution `{}` of job `{}` stopped.", executionId, name);
+      log.info("Execution `{}` of process `{}` stopped.", executionId, name);
    }
 
    @Override

@@ -3,6 +3,7 @@ package alpakkeer;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
+import alpakkeer.javadsl.Alpakkeer;
 import com.google.common.collect.Lists;
 import org.junit.Test;
 

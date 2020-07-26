@@ -1,6 +1,6 @@
 package alpakkeer.core.monitoring.collectors;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.monitoring.values.Marker;

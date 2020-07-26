@@ -1,6 +1,6 @@
 package alpakkeer.core.monitoring;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 
 public interface MetricsCollector extends MetricsMonitor {
 

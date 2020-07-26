@@ -6,8 +6,8 @@ import akka.japi.function.Function;
 import akka.japi.function.Procedure2;
 import akka.stream.UniqueKillSwitch;
 import akka.stream.javadsl.RunnableGraph;
-import alpakkeer.Alpakkeer;
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.Alpakkeer;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.config.ProcessConfiguration;
 import alpakkeer.core.jobs.monitor.LoggingJobMonitor;
 import alpakkeer.core.processes.monitor.LoggingProcessMonitor;
@@ -401,7 +401,7 @@ public final class ProcessDefinitions {
 
       @Override
       public CompletionStage<ProcessHandle> run(String executionId) {
-         return Operators.suppressExceptions(() -> runner.apply(ProcessStreamBuilder.apply(runtime, getMonitors(), executionId)));
+         return Operators.suppressExceptions(() -> runner.apply(ProcessStreamBuilder.apply(runtime, getMonitors(), executionId, logger)));
       }
 
    }

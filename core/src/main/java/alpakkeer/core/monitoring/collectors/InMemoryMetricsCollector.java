@@ -1,7 +1,7 @@
 package alpakkeer.core.monitoring.collectors;
 
 import akka.actor.ActorSystem;
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.Metrics;
 import alpakkeer.core.monitoring.MetricsCollector;

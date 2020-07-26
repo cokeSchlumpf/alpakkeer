@@ -4,6 +4,7 @@ import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import alpakkeer.core.scheduler.model.CronExpression;
+import alpakkeer.javadsl.Alpakkeer;
 import com.google.common.collect.Lists;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

@@ -1,9 +1,12 @@
 package alpakkeer.core.stream;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
+import org.slf4j.Logger;
 
 public interface StreamBuilder {
+
+   Logger getLogger();
 
    StreamMonitoringAdapter getMonitoring();
 
@@ -16,5 +19,7 @@ public interface StreamBuilder {
    StreamMessagingAdapter messaging();
 
    AlpakkeerRuntime runtime();
+
+   Logger logger();
 
 }

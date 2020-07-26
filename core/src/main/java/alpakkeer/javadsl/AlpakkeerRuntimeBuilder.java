@@ -1,4 +1,4 @@
-package alpakkeer;
+package alpakkeer.javadsl;
 
 import akka.actor.ActorSystem;
 import alpakkeer.api.AlpakkeerOpenApi;

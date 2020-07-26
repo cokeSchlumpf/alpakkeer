@@ -1,6 +1,6 @@
 package alpakkeer.core.resources;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.jobs.Job;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.Jobs;

@@ -1,6 +1,6 @@
 package alpakkeer.api;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.monitoring.MetricStore;
 import alpakkeer.core.monitoring.values.Marker;
 import alpakkeer.core.monitoring.values.TimeSeries;
@@ -34,12 +34,21 @@ public final class MetricsResource {
    private final AlpakkeerRuntime runtimeConfiguration;
 
    public Handler getAnnotationsHeader() {
-      return ctx -> {
+      var docs = OpenApiBuilder
+         .document()
+         .operation(op -> {
+            op.summary("Search Annotations");
+            op.description("Returns available annotations for the job.");
+            op.addTagsItem("Metrics");
+         })
+         .jsonArray("200", String.class);
+
+      return OpenApiBuilder.documented(docs, ctx -> {
          ctx.header("Access-Control-Allow-Origin", "*");
          ctx.header("Access-Control-Allow-Methods", "POST");
          ctx.header("Access-Control-Allow-Headers", "accept, content-type");
          ctx.status(200);
-      };
+      });
    }
 
    public Handler getPrometheusMetrics() {

@@ -1,12 +1,13 @@
 package alpakkeer.core.processes;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.processes.monitor.ProcessMonitor;
 import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.stream.StreamBuilders;
 import alpakkeer.core.stream.StreamMonitoringAdapter;
 import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
 
 @AllArgsConstructor(staticName = "apply")
 public class ProcessStreamBuilder implements StreamBuilder {
@@ -18,10 +19,11 @@ public class ProcessStreamBuilder implements StreamBuilder {
    public static ProcessStreamBuilder apply(
       AlpakkeerRuntime runtime,
       ProcessMonitor monitor,
-      String executionId) {
+      String executionId,
+      Logger logger) {
 
       var monitoring = StreamMonitoringAdapter.apply(monitor, executionId);
-      var sb = StreamBuilders.common(monitoring, runtime);
+      var sb = StreamBuilders.common(monitoring, runtime, logger);
       return apply(sb, executionId);
    }
 
@@ -33,6 +35,11 @@ public class ProcessStreamBuilder implements StreamBuilder {
     */
    public String getExecutionId() {
       return executionId;
+   }
+
+   @Override
+   public Logger getLogger() {
+      return sb.getLogger();
    }
 
    @Override
@@ -67,5 +74,10 @@ public class ProcessStreamBuilder implements StreamBuilder {
    @Override
    public AlpakkeerRuntime runtime() {
       return sb.runtime();
+   }
+
+   @Override
+   public Logger logger() {
+      return sb.logger();
    }
 }

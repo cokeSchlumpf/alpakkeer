@@ -1,12 +1,13 @@
 package alpakkeer.core.jobs;
 
-import alpakkeer.AlpakkeerRuntime;
+import alpakkeer.javadsl.AlpakkeerRuntime;
 import alpakkeer.core.jobs.monitor.JobMonitor;
 import alpakkeer.core.stream.StreamBuilder;
 import alpakkeer.core.stream.StreamBuilders;
 import alpakkeer.core.stream.StreamMonitoringAdapter;
 import alpakkeer.core.stream.messaging.StreamMessagingAdapter;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
 
 @AllArgsConstructor(staticName = "apply")
 public final class JobStreamBuilder<P, C> implements StreamBuilder {
@@ -23,11 +24,12 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
       AlpakkeerRuntime runtime,
       JobMonitor<P, C> monitor,
       String executionId,
+      Logger logger,
       P properties,
       C context) {
 
       var monitoring = StreamMonitoringAdapter.apply(monitor, executionId);
-      var sb = StreamBuilders.common(monitoring, runtime);
+      var sb = StreamBuilders.common(monitoring, runtime, logger);
       return apply(sb, executionId, properties, context);
    }
 
@@ -59,6 +61,11 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
    }
 
    @Override
+   public Logger getLogger() {
+      return streamBuilder.getLogger();
+   }
+
+   @Override
    public StreamMonitoringAdapter getMonitoring() {
       return streamBuilder.getMonitoring();
    }
@@ -86,5 +93,10 @@ public final class JobStreamBuilder<P, C> implements StreamBuilder {
    @Override
    public AlpakkeerRuntime runtime() {
       return streamBuilder.runtime();
+   }
+
+   @Override
+   public Logger logger() {
+      return streamBuilder.getLogger();
    }
 }
