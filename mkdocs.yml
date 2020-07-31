@@ -1,6 +1,18 @@
 site_name: Alpakkeer
 theme:
   name: material
-
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.tabbed
+  - pymdownx.superfences
+nav:
+  - 'Getting Started': index.md
+  - 'Concepts': concepts.md
+  - 'Jobs': jobs.md
+  - 'Processes': processes.md
+  - 'Stream Utilities': stream-utilities.md
+  - 'Monitoring & Metrics': monitoring.md
+  - 'Configuration': configuration.md
+  - 'Deployment': deployment.md
 repo_name: cokeSchlumpf/alpakkeer
 repo_url: https://github.com/cokeSchlumpf/alpakkeer

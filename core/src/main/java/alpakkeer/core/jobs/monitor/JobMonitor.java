@@ -1,7 +1,5 @@
 package alpakkeer.core.jobs.monitor;
 
-import alpakkeer.core.stream.CheckpointMonitor;
-import alpakkeer.core.stream.LatencyMonitor;
 import alpakkeer.core.stream.StreamMonitor;
 
 import java.util.Optional;

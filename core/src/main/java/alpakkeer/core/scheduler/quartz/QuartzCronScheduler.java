@@ -44,7 +44,7 @@ public final class QuartzCronScheduler implements CronScheduler {
          var key = new JobKey(name);
          var triggerKey = new TriggerKey(name);
          var jobData = new JobDataMap();
-         var jobBuilder = JobBuilder.newJob(QuartSchedulerJob.class);
+         var jobBuilder = JobBuilder.newJob(QuartzSchedulerJob.class);
 
          jobData.put(CONTEXT_KEY, job);
 

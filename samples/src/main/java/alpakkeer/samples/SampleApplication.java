@@ -45,7 +45,7 @@ public class SampleApplication {
                   ctx.json("Hello World");
                });
             })
-            .withScheduledExecution(CronExpression.everyMinute())
+            .withScheduledExecution(CronExpression.everySeconds(10))
             .build())
          .start();
 
