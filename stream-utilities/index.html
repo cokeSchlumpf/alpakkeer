@@ -264,11 +264,52 @@
     Messaging
   </a>
   
+    <nav class="md-nav" aria-label="Messaging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#supported-messaging-patterns" class="md-nav__link">
+    Supported Messaging Patterns
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#producing-messages" class="md-nav__link">
+    Producing Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consuming-messages" class="md-nav__link">
+    Consuming Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consuming-and-producing-messages" class="md-nav__link">
+    Consuming and Producing Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#stream-monitors" class="md-nav__link">
-    Stream Monitors
+  <a href="#stream-monitoring" class="md-nav__link">
+    Stream Monitoring
   </a>
   
 </li>
@@ -353,11 +394,52 @@
     Messaging
   </a>
   
+    <nav class="md-nav" aria-label="Messaging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#supported-messaging-patterns" class="md-nav__link">
+    Supported Messaging Patterns
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#producing-messages" class="md-nav__link">
+    Producing Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consuming-messages" class="md-nav__link">
+    Consuming Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consuming-and-producing-messages" class="md-nav__link">
+    Consuming and Producing Messages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#stream-monitors" class="md-nav__link">
-    Stream Monitors
+  <a href="#stream-monitoring" class="md-nav__link">
+    Stream Monitoring
   </a>
   
 </li>
@@ -390,10 +472,207 @@
                 
                 
                 <h1 id="stream-utilities">Stream Utilities</h1>
-<p>Alpakkeer offers easy accessible building-blogs for composing reactive streams with Akka Streams.</p>
+<p>Alpakkeer offers easy accessible building-blocks for composing reactive streams with Akka Streams. These utilities can be accessed via the builder object which is passed to <code>runGraph</code>-methods of the Job- and Process-Builders.</p>
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">process</span> <span class="o">-&gt;</span> <span class="n">process</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">streamBuilder</span> <span class="o">-&gt;</span> <span class="n">streamBuilder</span>
+        <span class="p">.</span><span class="na">messaging</span><span class="p">()</span>
+        <span class="p">.</span><span class="na">recordsSource</span><span class="p">(</span><span class="s">&quot;topic&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">throttle</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span><span class="n">Sink</span><span class="p">.</span><span class="na">foreach</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">::</span><span class="n">println</span><span class="p">),</span> <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">())))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// TODO</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="messaging">Messaging</h2>
-<h2 id="stream-monitors">Stream Monitors</h2>
+<p>The messaging building-blocks are an abstraction over messaging technologies, such as Kafka, Google PubSub or JMS. Alpakkeer also offers simple built-in messaging in-memory and file-system implementations which can be used for local development or simple systems.</p>
+<p>The abstraction allows developers to develop, run and test a stream-topology fast and quickly on the local machine w/o involving other technologies like Docker etc. for running Kafka, JMS brokers, etc.. Also automated component tests can be written quite easily using in-memory implementations.</p>
+<p>The messaging implementations take also care about re-processing failed (not committed) messages and committing offsets or elements (depending on the technology).</p>
+<h3 id="supported-messaging-patterns">Supported Messaging Patterns</h3>
+<p>Alpakkeer supports the <strong>message-queue</strong> and <strong>publish-subscribe</strong> messaging pattern. While message-queue has a queue where each message is processed <strong>at-least-once</strong> from any consumer, the publish-subscribe pattern has a topic where each message is processed <strong>at-least-once</strong> by every listening consumer. Details like message retention etc. are specific to messaging providers. </p>
+<p>By default messages which is sent via the messaging layer is serialized and deserialized using Alpakkeer's internal <code>ObjectMapper</code> instance, thus all messages will be serialized and sent as JSON messages. While this is not the most performant way of serializing and deserializing, it's good enough for most real-world usecases. Nevertheless, custom messaging providers may also user other serializers and deserializers.</p>
+<p>Every message must have a unique-key. If there is no meaningful key available in the used data model, Alpakkeer creates a unique key automatically.</p>
+<h3 id="producing-messages">Producing Messages</h3>
+<p>A sink to a messaging queue or topic can be created as follows:</p>
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withJob</span><span class="p">(</span><span class="n">jobs</span> <span class="o">-&gt;</span> <span class="n">jobs</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">Source</span>
+        <span class="p">.</span><span class="na">single</span><span class="p">(</span><span class="s">&quot;Hello World&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span>
+            <span class="n">b</span><span class="p">.</span><span class="na">messaging</span><span class="p">().</span><span class="na">itemsSink</span><span class="p">(</span><span class="s">&quot;some_topic&quot;</span><span class="p">,</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="n">s</span><span class="p">.</span><span class="na">toLowerCase</span><span class="p">()),</span> 
+            <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">()))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// TODO</span>
+</code></pre></div>
+
+</div>
+</div>
+<p>The 2nd parameter of <code>itemsSink</code> is a function which maps an item to its id. If the function is not defined, Aalpakkeer will create a randomized unique id.</p>
+<p>Single messages can also be produced without a stream, e.g. when a message should be created upon a Web API call:</p>
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withJob</span><span class="p">(</span><span class="n">jobs</span> <span class="o">-&gt;</span> <span class="n">jobs</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withApiEndpoint</span><span class="p">((</span><span class="n">app</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+        <span class="n">api</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;process&quot;</span><span class="p">,</span> <span class="n">ctx</span> <span class="o">-&gt;</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="n">request</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">.</span><span class="na">bodyAsClass</span><span class="p">(</span><span class="n">Request</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+            <span class="kd">var</span> <span class="n">result</span> <span class="o">=</span> <span class="n">app</span>
+                <span class="p">.</span><span class="na">getMessaging</span><span class="p">()</span>
+                <span class="p">.</span><span class="na">putItem</span><span class="p">(</span><span class="s">&quot;input&quot;</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+                <span class="p">.</span><span class="na">thenApply</span><span class="p">(</span><span class="n">done</span> <span class="o">-&gt;</span> <span class="s">&quot;Ok&quot;</span><span class="p">)</span>
+
+            <span class="n">ctx</span><span class="p">.</span><span class="na">result</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="na">toCompletableFuture</span><span class="p">());</span>
+        <span class="p">});</span>
+    <span class="p">}))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<h3 id="consuming-messages">Consuming Messages</h3>
+<p>Messages can be consumed by using <code>Source</code>-methods from Alpakkeer's messaging interface. Optionally a consumer group name can be passed to each of the  sources to identify multiple consumers. If the consumer group name is ommitted, a default will be used. At runtime there might be multipe instances using the same consumer group name, the whole group will process each message at least once.</p>
+<p>The output of messaging sources is always a <code>Record</code>. A record is an envelope around the actual message type which carries context information and the actual message.</p>
+<p>Each record should be committed, when it is successfully processed. All Alpakkeer sinks will automatically commit processed messages, but if no built-in sink is used, the record must be committed manually.</p>
+<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">process</span> <span class="o">-&gt;</span> <span class="n">process</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">b</span>
+        <span class="p">.</span><span class="na">getMessaging</span><span class="p">()</span>
+        <span class="p">.</span><span class="na">recordsSource</span><span class="p">(</span><span class="s">&quot;process-input&quot;</span><span class="p">,</span> <span class="n">classOf</span><span class="o">[</span><span class="n">Document</span><span class="o">]</span><span class="p">,</span> <span class="s">&quot;processors&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">record</span> <span class="o">-&gt;</span> <span class="n">record</span><span class="p">.</span><span class="na">withValue</span><span class="p">(</span><span class="n">record</span><span class="p">.</span><span class="na">getValue</span><span class="p">().</span><span class="na">getName</span><span class="p">()))</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span>
+            <span class="n">b</span><span class="p">.</span><span class="na">messaging</span><span class="p">().</span><span class="na">recordsSink</span><span class="p">(</span><span class="s">&quot;some_topic&quot;</span><span class="p">),</span> 
+            <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">())))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<h3 id="consuming-and-producing-messages">Consuming and Producing Messages</h3>
+<p>When a stream consumes, processes messaages and writes them to another topic or queue, it should use a record sink.</p>
+<div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">process</span> <span class="o">-&gt;</span> <span class="n">process</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">b</span>
+        <span class="p">.</span><span class="na">getMessaging</span><span class="p">()</span>
+        <span class="p">.</span><span class="na">recordsSource</span><span class="p">(</span><span class="s">&quot;process-input&quot;</span><span class="p">,</span> <span class="n">classOf</span><span class="o">[</span><span class="n">Document</span><span class="o">]</span><span class="p">,</span> <span class="s">&quot;processors&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">map</span><span class="p">(</span><span class="n">record</span> <span class="o">-&gt;</span> <span class="p">{</span>
+            <span class="n">record</span><span class="p">.</span><span class="na">commit</span><span class="p">();</span>
+            <span class="k">return</span> <span class="n">record</span><span class="p">.</span><span class="na">getValue</span><span class="p">();</span>
+        <span class="p">})</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span><span class="n">Sink</span><span class="p">.</span><span class="na">foreach</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">::</span><span class="n">println</span><span class="p">),</span> <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">())))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<h3 id="configuration">Configuration</h3>
+<p>The messaging type can be specified in Alpakkeer's messaaging configuration:</p>
+<div class="tabbed-set" data-tabs="6:1"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">application.conf</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>alpakkeer.messaging {
+    # Possible values: in-memory, fs, kafka
+    type = &quot;in-memory&quot;
+
+    fs {
+        directory = &quot;./messaging&quot;
+    }
+
+    kafka {
+        bootstrap-server: &quot;localhost:9042&quot;
+
+        consumer {
+            # See Alpakka Kafka Connector consumer configurations
+        }
+
+        producer {
+            # See Alpakka Kafka Connector producer configurations
+        }
+    }
+}
+</code></pre></div>
+
+</div>
+</div>
+<p><strong>TODO:</strong> Topic and Queue configurations.</p>
+<h2 id="stream-monitoring">Stream Monitoring</h2>
+<p>Alpakkeer offers sub-flows to argument streams with additional metrics for monitoring. <strong>Checkpoints</strong> collect simple measures at any point within a stream and report them in a defined interval to the proccess- or job-monitors:</p>
+<div class="tabbed-set" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withJob</span><span class="p">(</span><span class="n">jobs</span> <span class="o">-&gt;</span> <span class="n">jobs</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">Source</span>
+        <span class="p">.</span><span class="na">single</span><span class="p">(</span><span class="s">&quot;Hello World&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">via</span><span class="p">(</span><span class="n">b</span><span class="p">.</span><span class="na">getMonitoring</span><span class="p">().</span><span class="na">createCheckpointMonitor</span><span class="p">(</span><span class="s">&quot;step_1&quot;</span><span class="p">,</span> <span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span><span class="n">Sink</span><span class="p">.</span><span class="na">foreach</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">::</span><span class="n">println</span><span class="p">),</span> <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">()))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// TODO</span>
+</code></pre></div>
+
+</div>
+</div>
+<p>The checkpoint will report the following metrics:</p>
+<ul>
+<li><code>moment</code>: The moment when the checkpoint published its statistic as Java <code>Instant</code></li>
+<li><code>timeElapsedNanos</code>: The time elapsed in the interval in nano seconds</li>
+<li><code>count</code>: The number of documents processed in the interval</li>
+<li><code>totalPushPullLatencyNanos</code>: The total latency of the checkpoint's graph stage between push and next pull-call from the downstream</li>
+<li><code>totalPullPushLatencyNanos</code>: The total latency of the checkpoint's graph stage between pull and push of the upstrean</li>
+</ul>
+<p>Thus the checkpoint metrics can detect whether there are problems in the down- or the upstream processing, as well as simply count the number of processed documents in a stream.</p>
+<p>To monitor processing time of a sub-flow a <strong>Latency Monitor</strong> can be used. The sub-flow which is monitored must not filter or loose any elements.</p>
+<div class="tabbed-set" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">var</span> <span class="n">flow</span> <span class="o">=</span> <span class="n">Flow</span><span class="p">.</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="n">create</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="n">String</span><span class="p">::</span><span class="n">toUpperCase</span><span class="p">);</span>
+
+<span class="n">alpakkeer</span><span class="p">.</span><span class="na">withJob</span><span class="p">(</span><span class="n">jobs</span> <span class="o">-&gt;</span> <span class="n">jobs</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">Source</span>
+        <span class="p">.</span><span class="na">single</span><span class="p">(</span><span class="s">&quot;Hello World&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">via</span><span class="p">(</span><span class="n">b</span><span class="p">.</span><span class="na">getMonitoring</span><span class="p">().</span><span class="na">createLatencyMonitor</span><span class="p">(</span><span class="s">&quot;sub-flow&quot;</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span><span class="n">Sink</span><span class="p">.</span><span class="na">foreach</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">::</span><span class="n">println</span><span class="p">),</span> <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">()))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// TODO</span>
+</code></pre></div>
+
+</div>
+</div>
+<p>Like the checkpoint monitor, the latency monitor emits statistics in a given interval. The statistics reported include:</p>
+<ul>
+<li><code>moment</code>: The moment when the monitor published its statistic as Java <code>Instant</code></li>
+<li><code>timeElapsedNanos</code>: The time elapsed in the interval in nano seconds</li>
+<li><code>count</code>: The number of documents processed in the interval</li>
+<li><code>sumLatency</code>: The complete processing time within the interval in nano seconds</li>
+<li><code>avgLatency</code>: The average processing time measured in the interval</li>
+</ul>
+<p>All statistics are reported to the configured job- or process-monitors. Depending on the monitor implemention the statistics are logged, summerized or collected (e.g. for Prometheus).</p>
 <h2 id="error-handling">Error Handling</h2>
+<p><strong>TODO</strong></p>
                 
               
               

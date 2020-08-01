@@ -488,7 +488,7 @@
                 
                 
                 <h1 id="jobs">Jobs</h1>
-<p>Alpakkeer jobs are wrappers around streams with sources which have a definite count of records to process (e.g. JDBC sources, directory listings, etc.)). Jobs can be triggered following a schedule, manually via API call or programmatically via its API. </p>
+<p>Alpakkeer jobs are wrappers around streams with sources which have a definite count of records to process (e.g. JDBC sources, directory listings, etc.). Jobs can be triggered following a schedule, manually via API call or programmatically via its API. </p>
 <p>Alpakkeer ensures that different executions of a job are not running in parallel. If a job is already running when it is triggered, it can be either queued or discarded.</p>
 <p>When triggering jobs, properties can be passed to it to customize its behaviour; jobs also have a context to share state between executions of a job.</p>
 <h2 id="defining-jobs">Defining Jobs</h2>
@@ -508,7 +508,6 @@
 
 </div>
 </div>
-<p>A job can be triggered using</p>
 <h2 id="properties-and-context">Properties and Context</h2>
 <p>Every job has Properties type and a Context type. By default these types are set to <code>alpakkeer.core.values.Nothing</code> and <code>akka.Done</code>.</p>
 <p>Job <strong>poperties</strong> are the arguments which are passed to a job when it is triggered. The properties can be used while constructing the stream. Every job has default properties which are used if no properties are explicitly passed while triggering. </p>
@@ -662,7 +661,7 @@
 
 </div>
 </div>
-<p>Aa job can be configured to have multipe monitors of course.</p>
+<p>A job can be configured to have multipe monitors of course.</p>
 <h2 id="persisting-context">Persisting Context</h2>
 <p>By default all job contexts are kept in-memory only. The context store can be defined in the application configuration:</p>
 <div class="tabbed-set" data-tabs="8:1"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">application.conf</label><div class="tabbed-content">

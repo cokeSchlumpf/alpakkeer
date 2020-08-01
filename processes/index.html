@@ -262,6 +262,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#configuring-restart-backoffs" class="md-nav__link">
+    Configuring Restart Backoffs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#logging-monitoring" class="md-nav__link">
     Logging &amp; Monitoring
   </a>
@@ -391,6 +398,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#configuring-restart-backoffs" class="md-nav__link">
+    Configuring Restart Backoffs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#logging-monitoring" class="md-nav__link">
     Logging &amp; Monitoring
   </a>
@@ -446,13 +460,237 @@
                 
                 
                 <h1 id="processes">Processes</h1>
+<p>Processes are wrappers around streams with sources which have an indefinte count of records to process (e.g. Kafka consumers, directory change listeners, ...). Processes are usually running continously as long as the application is up and running, but they can also be stopped and restarted manually. If the stream fails, Alpakkeer will automatically try to restart the stream with a restart-with-backoff mechanism.</p>
 <h2 id="defining-processes">Defining Processes</h2>
+<p>A process can be defined using a builder API.</p>
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">process</span> <span class="o">-&gt;</span> <span class="n">process</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="n">b</span> <span class="o">-&gt;</span> <span class="n">Source</span>
+        <span class="p">.</span><span class="na">repeat</span><span class="p">(</span><span class="s">&quot;Hello World&quot;</span><span class="p">)</span>
+        <span class="p">.</span><span class="na">throttle</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="p">.</span><span class="na">toMat</span><span class="p">(</span><span class="n">Sink</span><span class="p">.</span><span class="na">foreach</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">::</span><span class="n">println</span><span class="p">),</span> <span class="n">Keep</span><span class="p">.</span><span class="na">right</span><span class="p">())))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="c1">// TODO</span>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="starting-and-stopping">Starting and Stopping</h2>
+<p>Processes can be started and stopped via REST API.</p>
+<div class="tabbed-set" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">Start</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>curl <span class="se">\</span>
+    --header <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+    --request POST <span class="se">\</span>
+    http://localhost:8042/api/v1/processes/hello-world
+</code></pre></div>
+
+</div>
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">Stop</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>curl <span class="se">\</span>
+    --header <span class="s2">&quot;Content-Type: application/json&quot;</span> <span class="se">\</span>
+    --request DELETE <span class="se">\</span>
+    http://localhost:8042/api/v1/processes/hello-world
+</code></pre></div>
+
+</div>
+</div>
+<p>Starting and stopping is also possible programmatically:</p>
+<div class="tabbed-set" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><label for="__tabbed_3_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">var</span> <span class="n">app</span> <span class="o">=</span> <span class="n">Alpakkeer</span><span class="p">.</span><span class="na">create</span><span class="p">()</span><span class="cm">/* ... process definitions ... */</span><span class="p">.</span><span class="na">start</span><span class="p">();</span>
+<span class="kd">var</span> <span class="n">process</span> <span class="o">=</span> <span class="n">app</span><span class="p">.</span><span class="na">getResources</span><span class="p">().</span><span class="na">getProcess</span><span class="p">(</span><span class="s">&quot;hello-world&quot;</span><span class="p">);</span>
+
+<span class="n">process</span><span class="p">.</span><span class="na">stop</span><span class="p">();</span>
+<span class="n">process</span><span class="p">.</span><span class="na">start</span><span class="p">();</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><label for="__tabbed_3_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<p>Processes are by default started upon application startup, this behavior can be disabled:</p>
+<div class="tabbed-set" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><label for="__tabbed_4_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">initializeStopped</span><span class="p">())</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><label for="__tabbed_4_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<h2 id="configuring-restart-backoffs">Configuring Restart Backoffs</h2>
+<p>Alpakkeer will try to keep streams running as long as the process is not stopped. Thus Alpakkeer restarts gracefully repeated streams, when a stream fails with an exception it is also restarted, but with an increasing backoff-timeout. The restart timeouts can be defined:</p>
+<div class="tabbed-set" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><label for="__tabbed_5_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withCompletionRestartBackoff</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMinutes</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+    <span class="p">.</span><span class="na">withInitialRetryBackoff</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofSeconds</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span>
+    <span class="p">.</span><span class="na">withRetryBackoffResetTimeout</span><span class="p">(</span><span class="n">Duration</span><span class="p">.</span><span class="na">ofMinutes</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><label for="__tabbed_5_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<p>The <code>retry-backoff-reset-timeout</code> specifies the duration how long a stream must be running without failure to reset the retry-backoff to its initial value.</p>
 <h2 id="logging-monitoring">Logging &amp; Monitoring</h2>
+<p>Processes can be monitored using the interface <code>alpakkeer.core.processes.monitor.ProcessMonitor</code>. The monitor can implement methods to collect information about exceptions, completions, start- and stop-events and other stream metrics collected with <a href="#TODO">monitoring flows</a> from Alpakkeer stream utilities.</p>
+<div class="tabbed-set" data-tabs="6:1"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><label for="__tabbed_6_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ProcessMonitor</span> <span class="p">{</span>
+    <span class="kt">void</span> <span class="nf">onStarted</span><span class="p">(</span><span class="n">String</span> <span class="n">executionId</span><span class="p">);</span>
+    <span class="kt">void</span> <span class="nf">onFailed</span><span class="p">(</span><span class="n">String</span> <span class="n">executionId</span><span class="p">,</span> <span class="n">Throwable</span> <span class="n">cause</span><span class="p">,</span> <span class="n">Instant</span> <span class="n">nextRetry</span><span class="p">);</span>
+    <span class="kt">void</span> <span class="nf">onCompletion</span><span class="p">(</span><span class="n">String</span> <span class="n">executionId</span><span class="p">,</span> <span class="n">Instant</span> <span class="n">nextStart</span><span class="p">);</span>
+    <span class="kt">void</span> <span class="nf">onStopped</span><span class="p">(</span><span class="n">String</span> <span class="n">executionId</span><span class="p">);</span>
+    <span class="n">CompletionStage</span><span class="o">&lt;</span><span class="n">Optional</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">&gt;&gt;</span> <span class="nf">getStatus</span><span class="p">();</span>
+
+    <span class="kt">void</span> <span class="nf">onStats</span><span class="p">(</span><span class="n">String</span> <span class="n">executionId</span><span class="p">,</span> <span class="n">String</span> <span class="n">name</span><span class="p">,</span> <span class="n">CheckpointMonitor</span><span class="p">.</span><span class="na">Stats</span> <span class="n">statistics</span><span class="p">);</span>
+    <span class="kt">void</span> <span class="nf">onStats</span><span class="p">(</span><span class="n">String</span> <span class="n">executionId</span><span class="p">,</span> <span class="n">String</span> <span class="n">name</span><span class="p">,</span> <span class="n">LatencyMonitor</span><span class="p">.</span><span class="na">Stats</span> <span class="n">statistics</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</div>
+</div>
+<p>The method <code>getStatus</code> can return an arbitary object which will be part of the stream status in the processes' REST API. Alpakkeer comes with a few built-in monitors:</p>
+<p>The <strong>LoggingMonitor</strong> will log all information into the SLF4J logger.</p>
+<div class="tabbed-set" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><label for="__tabbed_7_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withLoggingMonitor</span><span class="p">())</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><label for="__tabbed_7_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<p>The <strong>PrometheusMonitor</strong> will feed all information into Alpakkeer's Prometheus collector registry. These metrics can then be accessed by Prometheus via <code>/metrics</code>.</p>
+<div class="tabbed-set" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><label for="__tabbed_8_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withPrometheusMonitor</span><span class="p">())</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><label for="__tabbed_8_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<p>The <strong>HistoryMonitor</strong> stores information of executions up-to a define age or count of executions. The information can be kept in memory or can be stored in a database.</p>
+<div class="tabbed-set" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><label for="__tabbed_9_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withHistoryMonitor</span><span class="p">())</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><label for="__tabbed_9_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<p>Aa process can be configured to have multipe monitors of course.</p>
 <h2 id="disabling-processes">Disabling Processes</h2>
+<p>Processes can be disabled programmatically. This feature can be used to disable processes by application configurations. See also <a href="/deployment">Deployment</a> for more information.</p>
+<div class="tabbed-set" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><label for="__tabbed_10_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">disable</span><span class="p">(</span><span class="n">config</span><span class="p">.</span><span class="na">isProcessEnabled</span><span class="p">()))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><label for="__tabbed_10_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="api-endpoints">API endpoints</h2>
+<p>The default REST API can be extended with custom REST endpoints.</p>
+<div class="tabbed-set" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><label for="__tabbed_11_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withApiEndpoint</span><span class="p">((</span><span class="n">api</span><span class="p">,</span> <span class="n">process</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">{</span>
+        <span class="n">api</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;process&quot;</span><span class="p">,</span> <span class="n">ctx</span> <span class="o">-&gt;</span> <span class="p">{</span>
+            <span class="n">process</span><span class="p">.</span><span class="na">stop</span><span class="p">()</span>
+            <span class="n">ctx</span><span class="p">.</span><span class="na">result</span><span class="p">(</span><span class="s">&quot;stopped&quot;</span><span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">}))</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><label for="__tabbed_11_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
+<p>The <code>api</code> object is an instance of <a href="https://javalin.io">Javalin</a>, you can also extend the endpint with Open API documentation. See <a href="https://javalin.io/plugins/openapi#getting-started">Javalin Docs</a> for detailed information.</p>
 <h2 id="configuration-overrides">Configuration Overrides</h2>
+<p>Process configurations can be overridden or extended by (environment-specific) configurations. This feature might be useful if the stream should run with different configurations (e.g. different backoff-timeouts) in various environments. The default configuration key is <code>alpakkeer.processes</code>:</p>
+<p><strong>TODO</strong> Backoff Configuration</p>
+<div class="tabbed-set" data-tabs="12:1"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><label for="__tabbed_12_1">application.conf</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>alpakkeer.processes = [
+    {
+        name = &quot;hello-world&quot;
+        enabled = true
+        clear-monitors = false
+        monitors = [&quot;logging&quot;]
+        initialize-started = false
+    }
+]
+</code></pre></div>
+
+</div>
+</div>
+<p>In the process definition, these configurations can be used:</p>
+<div class="tabbed-set" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><label for="__tabbed_13_1">Java</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="n">alpakkeer</span><span class="p">.</span><span class="na">withProcess</span><span class="p">(</span><span class="n">processes</span> <span class="o">-&gt;</span> <span class="n">processes</span>
+    <span class="p">.</span><span class="na">create</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">runGraph</span><span class="p">(</span><span class="cm">/* ... */</span><span class="p">)</span>
+    <span class="p">.</span><span class="na">withConfiguration</span><span class="p">())</span>
+</code></pre></div>
+
+</div>
+<input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><label for="__tabbed_13_2">Scala</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
+
+</div>
+</div>
 <h2 id="rest-api">REST API</h2>
+<p>Processes can be managed using Alpakkeers REST API. The endpoints for processes are:</p>
+<ul>
+<li><code>GET /api/v1/processes</code> - List all defined processes</li>
+<li><code>GET /api/v1/processes/{name}</code> - Get process details</li>
+<li><code>POST /api/v1/processes/{name}</code> - Start the process</li>
+<li><code>DELETE /api/v1/processes/{name}</code> - Stop the process</li>
+</ul>
+<p>For more details, visit the Open API spec on a running instance, e.g. <a href="http://localhost:8042">http://localhost:8042</a>.</p>
                 
               
               
