@@ -1,5 +1,6 @@
 package alpakkeer.samples;
 
+import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
@@ -13,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class HelloAlpakkeer {
 
    public static void main(String... args) {
+      var flow = Flow.<String>create().map(String::toUpperCase)
       Alpakkeer
          .create()
          .configure(r -> r.withContextStore(ContextStores.apply().create()))
@@ -22,6 +24,8 @@ public class HelloAlpakkeer {
                .messaging()
                .recordsSource("topic", String.class)
                .throttle(1, Duration.ofSeconds(1))
+               .map(r -> r.getValue())
+               .via(b.getMonitoring().createLatencyMonitor("sub-flow", flow, Duration.ofSeconds(10)))
                .toMat(Sink.foreach(System.out::println), Keep.right()))
             .withLoggingMonitor()
             .initializeStopped()
