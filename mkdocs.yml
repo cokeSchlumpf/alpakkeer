@@ -2,6 +2,7 @@ site_name: Alpakkeer
 theme:
   name: material
 markdown_extensions:
+  - footnotes
   - pymdownx.highlight
   - pymdownx.tabbed
   - pymdownx.superfences
