@@ -224,15 +224,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#single-project" class="md-nav__link">
-    Single Project
+  <a href="#ports-and-adapters" class="md-nav__link">
+    Ports and Adapters
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#ports-and-adapters" class="md-nav__link">
-    Ports and Adapters
+  <a href="#single-project-distributed-deployment" class="md-nav__link">
+    Single Project - Distributed Deployment
   </a>
   
 </li>
@@ -356,15 +356,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#single-project" class="md-nav__link">
-    Single Project
+  <a href="#ports-and-adapters" class="md-nav__link">
+    Ports and Adapters
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#ports-and-adapters" class="md-nav__link">
-    Ports and Adapters
+  <a href="#single-project-distributed-deployment" class="md-nav__link">
+    Single Project - Distributed Deployment
   </a>
   
 </li>
@@ -404,10 +404,30 @@
                 
                 
                 <h1 id="concepts">Concepts</h1>
-<h2 id="single-project">Single Project</h2>
+<p>Alpakkeer is a toolkit which bundles various other frameworks and tools to make it easy to develop streaming applications based  on Akka Streams. Such applications are usually used for creating simple application integrations, prediction pipelines which integrate enterprise data with AI services, or automated machine learning pipelines. </p>
 <h2 id="ports-and-adapters">Ports and Adapters</h2>
+<p>The design of Alpakkeer aims to let developers focus on actual business requirements and business logic of the application instead of technical details like integrating streaming technologies like Kafka or Flink, or storage technologies like object storage, document databases etc.. Thus Alpakkeer strictly follows the <a href="https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)">Ports and Adapters Pattern</a> <sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> and provides deault ports for messaging, job and stream management as well as default implementations for these ports with various technologies.</p>
+<p><img alt="Hexagonal Architecture" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Hexagonal_Architecture.svg/1920px-Hexagonal_Architecture.svg.png" /></p>
+<p>With Alpakkeer applications can be run on minimal resources on a local machine, but also distributed on scalable cloud infrastructure and robust clusters for messaging and data stores, just by changing the application configuration.</p>
+<p>For all its default ports, Alpakkeer offers simple in-memory implementations (e.g. for messaging, context store) which can be used for local development, demos or very simple application which have no requirements for robustness. </p>
+<h2 id="single-project-distributed-deployment">Single Project - Distributed Deployment</h2>
+<p>Systems which are composed of multiple streams often share common data models or common stream logics. Also running the whole system to make manual tests and experiments for a optimal stream topology design help to quickly develop the application. Thus streams and services which might run distribited in a real system are easier to develop if all source code belongs to one project.</p>
+<p>For example, the following stream topology can be put in a single Alpakkeer Java Application.</p>
+<p><img alt="Sample Stream Topology" src="/assets/sample-stream-topology.png" /></p>
+<p><em>The crawlers can be implemented with Alpakkeer Jobs. The enricher and the processing streams can be implemented using Alpakkeer Processes.</em></p>
+<p>But at runtime, the application can run in different roles in multiple Kubernetes Deployments or on different virtual machines. See <a href="/configuration">Configuration</a> for more details.</p>
 <h2 id="convention-over-configuration">Convention over Configuration</h2>
+<p>Alpakkeers DSL and configuration always offers fine-grained settings, but also all API methods have alternatives with minimal user-input. Also all configurations have senseful defaults. Thus most Alpakkeer applications don't require much customization on defaults if application designs follow common conventions.</p>
 <h2 id="extensibility">Extensibility</h2>
+<p>All internal Alpakkeer components are defined by Interfaces. Thus almost all components can be replaced or extended with custom implementations. </p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>Ports &amp; Adapters image source: <a href="https://commons.wikimedia.org/wiki/File:Hexagonal_Architecture.svg">Wikimedia</a>&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
                 
               
               
