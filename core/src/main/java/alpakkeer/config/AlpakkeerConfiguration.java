@@ -28,6 +28,9 @@ public final class AlpakkeerConfiguration {
 
    private final ServerConfiguration api;
 
+   @Value("context-store")
+   private final ContextStoreConfiguration contextStore;
+
    private final MessagingConfiguration messaging;
 
    private final List<JobConfiguration> jobs;

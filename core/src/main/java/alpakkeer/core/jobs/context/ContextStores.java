@@ -1,4 +1,4 @@
-package alpakkeer.core.jobs;
+package alpakkeer.core.jobs.context;
 
 import akka.Done;
 import com.google.common.collect.Maps;
@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @AllArgsConstructor(staticName = "apply")
-public final class ContextStores {
+public final class  ContextStores {
 
    public ContextStore create() {
       return new ContextStore() {

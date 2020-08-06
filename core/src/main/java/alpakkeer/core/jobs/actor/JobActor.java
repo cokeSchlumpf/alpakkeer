@@ -5,7 +5,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import alpakkeer.core.jobs.ContextStore;
+import alpakkeer.core.jobs.context.ContextStore;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.actor.context.Context;
 import alpakkeer.core.jobs.actor.protocol.*;

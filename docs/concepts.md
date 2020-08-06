@@ -18,7 +18,7 @@ Systems which are composed of multiple streams often share common data models or
 
 For example, the following stream topology can be put in a single Alpakkeer Java Application.
 
-![Sample Stream Topology](/assets/sample-stream-topology.png)
+![Sample Stream Topology](./assets/sample-stream-topology.png)
 
 *The crawlers can be implemented with Alpakkeer Jobs. The enricher and the processing streams can be implemented using Alpakkeer Processes.*
 

@@ -240,6 +240,45 @@ The context store can also be configured programmatically:
 
     ```
 
+## Updating Job Context during Runtime
+
+When implementing a job which processes a huge amount of documents or where a long runtime can be expected, it might make sense to update the context already during job runtime. 
+
+=== "Java"
+
+    ```java
+    alpakkeer.withJob(jobs -> jobs
+        .create("hello-world")
+        .runGraph(b -> Documents
+            .getDocuments(from = context.date)
+            .via(/* some persisting flow */)
+            .statefulMapConcat(() -> {
+                LocalDateTime processed = LocalDateTime.MIN;
+                int count = 0;
+                return record -> {
+                    processed = record.updated;
+
+                    if (count < 1_000) {
+                        count++;
+                        return List.of();
+                    } else {
+                        count = 0;
+                        return List.of(processed);
+                    }
+                }
+            })
+            .mapAsync(latest -> b.setContext(Context.apply(latest)))
+            .toMat(Sink.ignore, Keep.right()))
+    ```
+
+=== "Scala"
+
+    ```scala
+
+    ```
+
+As in the assemble above the context should not be updated for every single document, but for some kind of batches. In the example the record is updated every thousand records. It is also important to only update the context with information for already processed records.
+
 ## Disabling Jobs
 
 Jobs can be disabled programmatically. This feature can be used to disable jobs by application configurations. See also [Deployment](/deployment) for more information.

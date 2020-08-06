@@ -550,7 +550,7 @@ public final class JobDefinitions {
 
       @Override
       public CompletionStage<JobHandle<C>> run(String executionId, P properties, C context) {
-         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(runtime, monitors, executionId, logger, properties, context)));
+         return Operators.suppressExceptions(() -> run.apply(JobStreamBuilder.apply(runtime, monitors, name, executionId, logger, properties, context)));
       }
 
    }

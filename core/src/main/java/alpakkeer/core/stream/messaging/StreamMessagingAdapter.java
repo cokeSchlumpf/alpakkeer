@@ -9,6 +9,7 @@ import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import alpakkeer.core.stream.Record;
 import alpakkeer.core.stream.context.CommittableRecordContext;
+import alpakkeer.core.stream.context.NoRecordContext;
 import alpakkeer.core.stream.context.RecordContext;
 
 import java.util.Optional;
@@ -79,6 +80,46 @@ public interface StreamMessagingAdapter {
          .<T>create()
          .map(r -> Record.apply(r, key.apply(r)))
          .toMat(recordsSink(topic), Keep.right());
+   }
+
+   /**
+    * A flow which publishes records to a messaging topic.
+    *
+    * @param topic The name of the topic
+    * @param <R> The type of the record
+    * @param <C> The context type of the record
+    * @return An Akka Streams flow
+    */
+   <R, C extends RecordContext> Flow<Record<R, C>, Record<R, C>, NotUsed> recordsFlow(String topic);
+
+   /**
+    * A flow which publishes items to a messaging topic. The key of the message is generated with a random
+    * key-generator.
+    *
+    * @param topic The name of the topic
+    * @param <T> The type of the item
+    * @return An Akka Streams flow
+    */
+   default <T> Flow<T, Record<T, NoRecordContext>, NotUsed> itemsFlow(String topic) {
+      return Flow
+         .<T>create()
+         .map(Record::apply)
+         .via(recordsFlow(topic));
+   }
+
+   /**
+    * A flow which publishes items to a messaging topic.
+    *
+    * @param topic The name of the topic
+    * @param key A function to generate the message key from the item
+    * @param <T> The type of the item
+    * @return An Akka Streams flow
+    */
+   default <T> Flow<T, Record<T, NoRecordContext>, NotUsed> itemsFlow(String topic, Function<T, String> key) {
+      return Flow
+         .<T>create()
+         .map(r -> Record.apply(r, key.apply(r)))
+         .via(recordsFlow(topic));
    }
 
    /**

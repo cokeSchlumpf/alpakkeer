@@ -80,6 +80,16 @@ public final class InMemoryStreamMessagingAdapter implements StreamMessagingAdap
    }
 
    @Override
+   public <R, C extends RecordContext> Flow<Record<R, C>, Record<R, C>, NotUsed> recordsFlow(String topic) {
+      return Flow
+         .<Record<R,C>>create()
+         .map(record -> {
+            putDocument$internal(topic, record);
+            return record;
+         });
+   }
+
+   @Override
    public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType, String consumerGroup) {
       // TODO: Implement consumer id
       return CompletableFuture.completedFuture(getDocument$internal(topic));

@@ -2,7 +2,7 @@ package alpakkeer.javadsl;
 
 import akka.actor.ActorSystem;
 import alpakkeer.config.AlpakkeerConfiguration;
-import alpakkeer.core.jobs.ContextStore;
+import alpakkeer.core.jobs.context.ContextStore;
 import alpakkeer.core.monitoring.MetricsCollector;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.stream.messaging.StreamMessagingAdapter;

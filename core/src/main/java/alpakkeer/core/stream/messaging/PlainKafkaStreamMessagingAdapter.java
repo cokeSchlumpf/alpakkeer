@@ -54,6 +54,11 @@ public final class PlainKafkaStreamMessagingAdapter implements StreamMessagingAd
 
    @Override
    public <R, C extends RecordContext> Sink<Record<R, C>, CompletionStage<Done>> recordsSink(String topic) {
+      return this.<R, C>recordsFlow(topic).toMat(Sink.ignore(), Keep.right());
+   }
+
+   @Override
+   public <R, C extends RecordContext> Flow<Record<R, C>, Record<R, C>, NotUsed> recordsFlow(String topic) {
       var topicSC = StringConverters.Converter(topic).toSnakeCase();
       var settings = ProducerSettings
          .create(configuration.getProducer(), new StringSerializer(), new StringSerializer())
@@ -61,16 +66,19 @@ public final class PlainKafkaStreamMessagingAdapter implements StreamMessagingAd
 
       return Flow
          .<Record<R, C>>create()
+         .map(record -> ProducerMessage
+            .single(
+               new ProducerRecord<>(topicSC, record.getKey(), om.writeValueAsString(record)),
+               record))
+         .via(Producer.flexiFlow(settings))
+         .map(ProducerMessage.Results::passThrough)
          .map(record -> {
-            // TODO: Do after actual insertion
             if (record.getContext() instanceof CommittableRecordContext) {
                ((CommittableRecordContext) record.getContext()).commit();
             }
 
-            return ProducerMessage.single(new ProducerRecord<>(topicSC, record.getKey(), om.writeValueAsString(record)));
-         })
-         .via(Producer.flexiFlow(settings))
-         .toMat(Sink.ignore(), Keep.right());
+            return record;
+         });
    }
 
    @Override
@@ -84,14 +92,15 @@ public final class PlainKafkaStreamMessagingAdapter implements StreamMessagingAd
    public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType, String consumerGroup) {
       var topicsSC = StringConverters.Converter(topic).toSnakeCase();
       var settings = ConsumerSettings.create(configuration.getConsumer(), new StringDeserializer(), new StringDeserializer())
-            .withBootstrapServers(configuration.getBootstrapServer())
-            .withGroupId(consumerGroup)
-            .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+         .withBootstrapServers(configuration.getBootstrapServer())
+         .withGroupId(consumerGroup)
+         .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
       return Consumer
          .plainSource(settings, Subscriptions.topics(topicsSC))
          .mapMaterializedValue(c -> NotUsed.getInstance())
          .map(record -> (Record<T, NoRecordContext>) om.readValue(record.value(), Record.class))
-         .map(record -> record.withContext(CommittableRecordContexts.createFromRunnable(() -> {})));
+         .map(record -> record.withContext(CommittableRecordContexts.createFromRunnable(() -> {
+         })));
    }
 }

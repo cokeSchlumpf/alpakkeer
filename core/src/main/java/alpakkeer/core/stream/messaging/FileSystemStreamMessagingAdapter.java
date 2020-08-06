@@ -91,6 +91,16 @@ public final class FileSystemStreamMessagingAdapter implements StreamMessagingAd
    }
 
    @Override
+   public <R, C extends RecordContext> Flow<Record<R, C>, Record<R, C>, NotUsed> recordsFlow(String topic) {
+      return Flow
+         .<Record<R, C>>create()
+         .map(record -> {
+            putDocument$internal(topic, record);
+            return record;
+         });
+   }
+
+   @Override
    public <T> CompletionStage<Optional<Record<T, CommittableRecordContext>>> getNextRecord(String topic, Class<T> recordType, String consumerGroup) {
       // TODO: Use consumer id!
       return CompletableFuture.completedFuture(Operators.suppressExceptions(() -> Files

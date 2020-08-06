@@ -1,6 +1,6 @@
 package alpakkeer.core.jobs.actor.context;
 
-import alpakkeer.core.jobs.ContextStore;
+import alpakkeer.core.jobs.context.ContextStore;
 import alpakkeer.core.jobs.JobDefinition;
 import alpakkeer.core.jobs.model.ScheduledExecution;
 import alpakkeer.core.scheduler.CronScheduler;
