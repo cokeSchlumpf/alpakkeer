@@ -1,18 +1,21 @@
 package alpakkeer.core.jobs.context;
 
 import akka.Done;
+import alpakkeer.javadsl.AlpakkeerBaseRuntime;
 import com.google.common.collect.Maps;
-import lombok.AllArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-@AllArgsConstructor(staticName = "apply")
 public final class  ContextStores {
 
-   public ContextStore create() {
+   private ContextStores() {
+
+   }
+
+   public static ContextStore createFromConfiguration(AlpakkeerBaseRuntime runtime) {
       return new ContextStore() {
          private HashMap<String, Object> store = Maps.newHashMap();
 

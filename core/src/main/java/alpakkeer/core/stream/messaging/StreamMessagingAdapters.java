@@ -1,8 +1,6 @@
 package alpakkeer.core.stream.messaging;
 
-import akka.actor.ActorSystem;
-import alpakkeer.config.MessagingConfiguration;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import alpakkeer.javadsl.AlpakkeerBaseRuntime;
 
 public final class StreamMessagingAdapters {
 
@@ -10,7 +8,10 @@ public final class StreamMessagingAdapters {
 
    }
 
-   public static StreamMessagingAdapter createFromConfiguration(ActorSystem system, ObjectMapper om, MessagingConfiguration configuration) {
+   public static StreamMessagingAdapter createFromConfiguration(AlpakkeerBaseRuntime runtime) {
+      var configuration = runtime.getConfiguration().getMessaging();
+      var om = runtime.getObjectMapper();
+      var system = runtime.getSystem();
       var type = configuration.getType().toLowerCase();
 
       switch (type) {
