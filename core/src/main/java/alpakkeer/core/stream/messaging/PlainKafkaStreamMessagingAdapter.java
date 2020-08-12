@@ -19,7 +19,6 @@ import alpakkeer.core.stream.context.CommittableRecordContext;
 import alpakkeer.core.stream.context.CommittableRecordContexts;
 import alpakkeer.core.stream.context.NoRecordContext;
 import alpakkeer.core.stream.context.RecordContext;
-import alpakkeer.core.util.StringConverters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -59,7 +58,6 @@ public final class PlainKafkaStreamMessagingAdapter implements StreamMessagingAd
 
    @Override
    public <R, C extends RecordContext> Flow<Record<R, C>, Record<R, C>, NotUsed> recordsFlow(String topic) {
-      var topicSC = StringConverters.Converter(topic).toSnakeCase();
       var settings = ProducerSettings
          .create(configuration.getProducer(), new StringSerializer(), new StringSerializer())
          .withBootstrapServers(configuration.getBootstrapServer());
@@ -68,7 +66,7 @@ public final class PlainKafkaStreamMessagingAdapter implements StreamMessagingAd
          .<Record<R, C>>create()
          .map(record -> ProducerMessage
             .single(
-               new ProducerRecord<>(topicSC, record.getKey(), om.writeValueAsString(record)),
+               new ProducerRecord<>(topic, record.getKey(), om.writeValueAsString(record)),
                record))
          .via(Producer.flexiFlow(settings))
          .map(ProducerMessage.Results::passThrough)
@@ -90,14 +88,13 @@ public final class PlainKafkaStreamMessagingAdapter implements StreamMessagingAd
    @Override
    @SuppressWarnings("unchecked")
    public <T> Source<Record<T, CommittableRecordContext>, NotUsed> recordsSource(String topic, Class<T> recordType, String consumerGroup) {
-      var topicsSC = StringConverters.Converter(topic).toSnakeCase();
       var settings = ConsumerSettings.create(configuration.getConsumer(), new StringDeserializer(), new StringDeserializer())
          .withBootstrapServers(configuration.getBootstrapServer())
          .withGroupId(consumerGroup)
          .withProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
       return Consumer
-         .plainSource(settings, Subscriptions.topics(topicsSC))
+         .plainSource(settings, Subscriptions.topics(topic))
          .mapMaterializedValue(c -> NotUsed.getInstance())
          .map(record -> (Record<T, NoRecordContext>) om.readValue(record.value(), Record.class))
          .map(record -> record.withContext(CommittableRecordContexts.createFromRunnable(() -> {
