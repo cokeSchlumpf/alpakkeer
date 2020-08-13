@@ -33,12 +33,22 @@ public final class Configs {
    /**
     * The name of the system variable which is used to store environment name
     */
-   public static final String ENV_ALPAKKEER_ENVIRONMENT = "alpakkeer.environment";
+   public static final String SYS_ALPAKKEER_ENVIRONMENT = "alpakkeer.environment";
 
    /**
-    * The name of the system variable which is used to store the role of the ire instance
+    * The name of the environment variable which is used to store environment name
     */
-   public static final String ENV_ALPAKKEER_ROLE = "alpakkeer.role";
+   public static final String ENV_ALPAKKEER_ENVIRONMENT = "ALPAKKEER_ENVIRONMENT";
+
+   /**
+    * The name of the system variable which is used to store the role of the Alpakkeer instance
+    */
+   public static final String SYS_ALPAKKEER_ROLE = "alpakkeer.role";
+
+   /**
+    * The name of the environment variable which might be used to store the role of the Alpakkeer instance
+    */
+   public static final String ENV_ALPAKKEER_ROLE = "ALPAKKEER_ROLE";
 
    /**
     * The default environment name
@@ -64,14 +74,14 @@ public final class Configs {
    /**
     * The name of the current environment, based on "alpakkeer.environment" system environment variable.
     */
-   private static final String environmentName = system.hasPath(ENV_ALPAKKEER_ENVIRONMENT) ?
-      system.getString(ENV_ALPAKKEER_ENVIRONMENT) : LOCAL_ENVIRONMENT;
+   private static final String environmentName = system.hasPath(SYS_ALPAKKEER_ENVIRONMENT) ?
+      system.getString(SYS_ALPAKKEER_ENVIRONMENT) : environment.hasPath(ENV_ALPAKKEER_ENVIRONMENT) ? environment.getString(ENV_ALPAKKEER_ENVIRONMENT) : LOCAL_ENVIRONMENT;
 
    /**
     * The name of the current instance's role, based on "alpakkeer.role" system environment variable.
     */
-   private static final String roleName = system.hasPath(ENV_ALPAKKEER_ROLE) ?
-      system.getString(ENV_ALPAKKEER_ROLE) : null;
+   private static final String roleName = system.hasPath(SYS_ALPAKKEER_ROLE) ?
+      system.getString(SYS_ALPAKKEER_ROLE) : environment.hasPath(ENV_ALPAKKEER_ROLE) ? environment.getString(ENV_ALPAKKEER_ROLE) : null;
 
    /**
     * The logger for this class.
@@ -350,7 +360,7 @@ public final class Configs {
       /**
        * Creates a new config builder; default configuration will be loaded first.
        * <p>
-       * The environment name can be set in the system variable/ JVM argument {@link ConfigBuilder#ENV_ALPAKKEER_ENVIRONMENT}.
+       * The environment name can be set in the system variable/ JVM argument {@link ConfigBuilder#SYS_ALPAKKEER_ENVIRONMENT}.
        *
        * @return The {@link ConfigBuilder} instance
        */
@@ -431,7 +441,7 @@ public final class Configs {
       /**
        * Creates a new configuration which overrides existing values with role specific config file.
        * <p>
-       * The role can be defined in the system variable/ JVM argument {@link ConfigBuilder#ENV_ALPAKKEER_ROLE}.
+       * The role can be defined in the system variable/ JVM argument {@link ConfigBuilder#SYS_ALPAKKEER_ROLE}.
        *
        * @return A new {@link ConfigBuilder} instance
        */
