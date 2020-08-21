@@ -1,13 +1,6 @@
 package alpakkeer.core.jobs.context;
 
-import akka.Done;
 import alpakkeer.javadsl.AlpakkeerBaseRuntime;
-import com.google.common.collect.Maps;
-
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 public final class  ContextStores {
 
@@ -16,25 +9,27 @@ public final class  ContextStores {
    }
 
    public static ContextStore createFromConfiguration(AlpakkeerBaseRuntime runtime) {
-      return new ContextStore() {
-         private HashMap<String, Object> store = Maps.newHashMap();
+      var configuration = runtime.getConfiguration().getContextStore();
+      var om = runtime.getObjectMapper();
+      var system = runtime.getSystem();
 
-         @Override
-         public <C> CompletionStage<Done> saveContext(String name, C context) {
-            store.put(name, context);
-            return CompletableFuture.completedFuture(Done.getInstance());
-         }
-
-         @Override
-         @SuppressWarnings("unchecked")
-         public <C> CompletionStage<Optional<C>> readLatestContext(String name) {
-            if (store.containsKey(name)) {
-               return CompletableFuture.completedFuture(Optional.of((C) store.get(name)));
-            } else {
-               return CompletableFuture.completedFuture(Optional.empty());
-            }
-         }
-      };
+      switch (configuration.getType().toLowerCase()) {
+         case "in-memory":
+         case "in-mem":
+         case "default":
+            return InMemoryContextStore.apply(om);
+         case "fs":
+         case "file-system":
+         case "files":
+            return FileSystemContextStore.apply(configuration.getFs(), om);
+         case "postgres":
+         case "db":
+         case "database":
+            return PostgresContextStore.apply(configuration.getDb(), system, om);
+         default:
+            throw new RuntimeException(String.format("Unknown context store type `%s`. " +
+               "Allowed values are `in-memory`, `file-system`", configuration.getType()));
+      }
    }
 
 }

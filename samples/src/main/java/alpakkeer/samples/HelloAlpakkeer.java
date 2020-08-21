@@ -4,11 +4,11 @@ import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
-import alpakkeer.core.jobs.ContextStores;
 import alpakkeer.core.scheduler.model.CronExpression;
 import alpakkeer.javadsl.Alpakkeer;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 public class HelloAlpakkeer {
 
@@ -17,16 +17,12 @@ public class HelloAlpakkeer {
 
       Alpakkeer
          .create()
-         .configure(r -> r.withContextStore(ContextStores.apply().create()))
          .withProcess(process -> process
             .create("hello-world")
             .runGraph(b -> b
                .messaging()
                .recordsSource("topic", String.class)
                .throttle(1, Duration.ofSeconds(1))
-               .statefulMapConcat(record -> {
-                  val next con
-               })
                .map(r -> r.getValue())
                .via(b.getMonitoring().createLatencyMonitor("sub-flow", flow, Duration.ofSeconds(10)))
                .toMat(Sink.foreach(System.out::println), Keep.right()))
@@ -36,10 +32,11 @@ public class HelloAlpakkeer {
          .withRetryBackoffResetTimeout(Duration.ofMinutes(10)))
 
          .withJob(jobs -> jobs
-            .create("Hello World")
+            .create("hello-world-job", cfg -> cfg.withInitialContext(IncrementalContext.apply(LocalDateTime.MIN)))
             .runGraph(b -> Source
                .single("Hello World")
-               .toMat(Sink.foreach(System.out::println), Keep.right()))
+               .toMat(Sink.foreach(System.out::println), Keep.right())
+            .mapMaterializedValue(done -> done.thenApply(d -> IncrementalContext.apply(LocalDateTime.now()))))
             .withScheduledExecution(CronExpression.everySeconds(10))
             .withHistoryMonitor()
             .withLoggingMonitor()
@@ -47,8 +44,7 @@ public class HelloAlpakkeer {
                api.get("process", ctx -> {
                   ctx.result(job.start().toCompletableFuture());
                });
-            })
-            .withConfiguration())
+            }))
          .start();
    }
 

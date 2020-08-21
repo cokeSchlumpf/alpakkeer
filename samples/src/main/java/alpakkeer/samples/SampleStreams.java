@@ -60,8 +60,8 @@ public final class SampleStreams {
       return FileIO
          .fromPath(new File("./src/main/resources/tweets.csv").toPath())
          .via(CsvParsing.lineScanner())
-         .via(sb.createCheckpointMonitor("tweet-count", Duration.ofMillis(500)))
-         .via(sb.createLatencyMonitor("tweet-processing", processTweets, Duration.ofSeconds(1)))
+         .via(sb.monitoring().createCheckpointMonitor("tweet-count", Duration.ofMillis(500)))
+         .via(sb.monitoring().createLatencyMonitor("tweet-processing", processTweets, Duration.ofSeconds(1)))
          .fold(Maps.<String, Integer>newHashMap(), (collected, tags) -> {
             tags.forEach(tag -> {
                if (collected.containsKey(tag)) {

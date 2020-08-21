@@ -48,6 +48,7 @@ public final class AlpakkeerAPI {
 
          // Admin
          .get("/api/v1/about", admin.getAbout())
+         .get("/api/v1/admin/config", admin.getConfig())
          .get("/api/v1/admin/crontab", admin.getJobs());
 
       return AlpakkeerAPI.apply(runtime.getApp());

@@ -1,14 +1,10 @@
 package alpakkeer.api;
 
 import alpakkeer.config.AlpakkeerConfiguration;
-import alpakkeer.core.jobs.model.JobStatus;
+import alpakkeer.core.config.Configs;
 import alpakkeer.core.scheduler.CronScheduler;
 import alpakkeer.core.scheduler.model.JobDetails;
-import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.dsl.OpenApiBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -42,6 +38,25 @@ public final class AdminResource {
 
       return OpenApiBuilder.documented(docs, ctx -> {
          ctx.json(About.apply(config.getEnvironment(), config.getVersion()));
+      });
+   }
+
+   public Handler getConfig() {
+      var docs = OpenApiBuilder
+         .document()
+         .operation(op -> {
+            op.summary("Application Configuration");
+            op.description("Returns the active application configuration if enabled. This function should be disabled in most environments as it may expose passwords and other secrets!");
+            op.addTagsItem("Admin");
+         })
+         .result("200", String.class, "text/plain");
+
+      return OpenApiBuilder.documented(docs, ctx -> {
+         if (config.isExposeConfig()) {
+            ctx.result(Configs.asString(Configs.application));
+         } else {
+            ctx.result("Configuration is not exposed. Change `alpakkeer.expose-config`-Setting to expose the configuration.");
+         }
       });
    }
 

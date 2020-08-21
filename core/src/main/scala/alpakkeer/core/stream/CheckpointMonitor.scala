@@ -82,6 +82,7 @@ final class CheckpointMonitor[A] extends GraphStage[FanOutShape2[A, A, Stats]] {
 
     setHandler(statsOut, new OutHandler {
       def onPull(): Unit = pushStats()
+
       override def onDownstreamFinish(cause: Throwable): Unit = {}
     })
   }

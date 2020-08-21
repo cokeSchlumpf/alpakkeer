@@ -26,6 +26,9 @@ public final class AlpakkeerConfiguration {
    @Value("show-banner")
    private final boolean showBanner;
 
+   @Value("expose-config")
+   private final boolean exposeConfig;
+
    private final ServerConfiguration api;
 
    @Value("context-store")

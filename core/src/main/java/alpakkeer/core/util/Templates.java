@@ -40,7 +40,7 @@ public final class Templates {
     */
    public static String renderTemplateFromResources(String resourcePath, Map<String, Object> values) {
       return Operators.suppressExceptions(() -> {
-         var engine = new PebbleEngine.Builder().build();
+         var engine = new PebbleEngine.Builder().autoEscaping(false).build();
          var template = engine.getTemplate(resourcePath);
          var writer = new StringWriter();
          template.evaluate(writer, values);

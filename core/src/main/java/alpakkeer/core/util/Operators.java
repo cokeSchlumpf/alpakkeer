@@ -175,11 +175,27 @@ public final class Operators {
       }
    }
 
+   public static void suppressExceptions(ExceptionalRunnable runnable, String message) {
+      try {
+         runnable.run();
+      } catch (Exception e) {
+         throw new RuntimeException(message, e);
+      }
+   }
+
    public static <T> T suppressExceptions(ExceptionalSupplier<T> supplier) {
       try {
          return supplier.get();
       } catch (Exception e) {
          return ExceptionUtils.wrapAndThrow(e);
+      }
+   }
+
+   public static <T> T suppressExceptions(ExceptionalSupplier<T> supplier, String message) {
+      try {
+         return supplier.get();
+      } catch (Exception e) {
+         throw new RuntimeException(message, e);
       }
    }
 

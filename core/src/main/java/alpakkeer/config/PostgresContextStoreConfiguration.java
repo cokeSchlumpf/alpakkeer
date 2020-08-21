@@ -1,6 +1,7 @@
 package alpakkeer.config;
 
 import alpakkeer.core.config.annotations.ConfigurationProperties;
+import com.typesafe.config.Config;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,16 +11,12 @@ import lombok.NoArgsConstructor;
 @ConfigurationProperties
 @NoArgsConstructor(access = AccessLevel.PRIVATE, force = true)
 @AllArgsConstructor(staticName = "apply")
-public final class ContextStoreConfiguration {
+public final class PostgresContextStoreConfiguration {
 
-   /**
-    * Specifies the used context store configuration type.
-    * Possible values: in-memory, fs, db
-    */
-   String type;
+   private final String schema;
 
-   private final FileSystemContextStoreConfiguration fs;
+   private final String table;
 
-   private final PostgresContextStoreConfiguration db;
+   private final Config database;
 
 }
