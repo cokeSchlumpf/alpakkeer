@@ -40,7 +40,7 @@ public final class PostgresContextStore implements ContextStore {
    private final SlickSession session;
 
    public static PostgresContextStore apply(PostgresContextStoreConfiguration config, ActorSystem system, ObjectMapper om) {
-      return apply(config, system, om, SlickSession.forConfig(config.getDatabase()));
+      return apply(config, system, om, SlickSession.forConfig( config.getDatabase()));
    }
 
    @Override
