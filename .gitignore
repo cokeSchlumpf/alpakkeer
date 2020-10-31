@@ -1,8 +1,6 @@
 # Created by https://www.gitignore.io/api/java,macos,gradle
 # Edit at https://www.gitignore.io/?templates=java,macos,gradle
 
-mlp-text-annotation
-
 
 ### SBT ###
 # Simple Build Tool
@@ -100,5 +98,6 @@ out
 application.local.conf
 tweets.csv
 site/
+env
 
 # End of https://www.gitignore.io/api/java,macos,gradle
