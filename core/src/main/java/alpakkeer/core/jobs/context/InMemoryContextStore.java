@@ -1,6 +1,7 @@
 package alpakkeer.core.jobs.context;
 
 import akka.Done;
+import alpakkeer.core.stream.Record;
 import alpakkeer.core.util.Operators;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
@@ -25,7 +26,8 @@ public final class InMemoryContextStore implements ContextStore {
 
    @Override
    public <C> CompletionStage<Done> saveContext(String name, C context) {
-      store.put(name, Operators.suppressExceptions(() -> om.writeValueAsString(context)));
+      Record record = Record.apply(context);
+      store.put(name, Operators.suppressExceptions(() -> om.writeValueAsString(record)));
       return CompletableFuture.completedFuture(Done.getInstance());
    }
 
@@ -33,7 +35,11 @@ public final class InMemoryContextStore implements ContextStore {
    @SuppressWarnings("unchecked")
    public <C> CompletionStage<Optional<C>> readLatestContext(String name) {
       if (store.containsKey(name)) {
-         return CompletableFuture.completedFuture(Optional.of((C) store.get(name)));
+         return CompletableFuture.completedFuture(
+             Operators.suppressExceptions(() -> {
+                var record = om.readValue(store.get(name), Record.class);
+                return Optional.of(record.getValue());
+             }));
       } else {
          return CompletableFuture.completedFuture(Optional.empty());
       }
