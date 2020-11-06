@@ -2,6 +2,7 @@ package alpakkeer.core.jobs.context;
 
 import akka.Done;
 import alpakkeer.core.stream.Record;
+import alpakkeer.core.stream.context.NoRecordContext;
 import alpakkeer.core.util.Operators;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
@@ -37,7 +38,7 @@ public final class InMemoryContextStore implements ContextStore {
       if (store.containsKey(name)) {
          return CompletableFuture.completedFuture(
              Operators.suppressExceptions(() -> {
-                var record = om.readValue(store.get(name), Record.class);
+                var record = (Record<C, NoRecordContext>) om.readValue(store.get(name), Record.class);
                 return Optional.of(record.getValue());
              }));
       } else {
